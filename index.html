@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Magic Forest</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="loading">
+      <h1>Magic Forest</h1>
+      <div class="bar"><div id="loading-fill"></div></div>
+      <p id="loading-text">Carregando…</p>
+    </div>
+
+    <div id="overlay" hidden>
+      <h1>Magic Forest</h1>
+      <p class="cta">Clique para explorar</p>
+      <ul class="keys">
+        <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> andar</li>
+        <li><kbd>Shift</kbd> correr</li>
+        <li><kbd>Espaço</kbd> pular</li>
+        <li><kbd>N</kbd> dia / noite</li>
+        <li><kbd>F</kbd> modo voo</li>
+        <li><kbd>Esc</kbd> pausar</li>
+      </ul>
+    </div>
+
+    <div id="hud" hidden>
+      <span id="hud-mode"></span>
+      <span id="hud-fps"></span>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

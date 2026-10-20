@@ -1,0 +1,122 @@
+:root {
+  --ink: #f4efe2;
+  --ink-dim: rgba(244, 239, 226, 0.7);
+  --accent: #ffcf6e;
+  --scrim: rgba(8, 14, 24, 0.55);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0b1220;
+  color: var(--ink);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+#loading,
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  text-align: center;
+  padding: 16px;
+}
+
+#loading {
+  background: radial-gradient(circle at 50% 40%, #1d3a3a, #0b1220 70%);
+  z-index: 3;
+}
+
+#overlay {
+  background: var(--scrim);
+  cursor: pointer;
+  z-index: 2;
+  backdrop-filter: blur(2px);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(34px, 7vw, 64px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.bar {
+  width: min(320px, 80vw);
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+#loading-fill {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+#loading-text {
+  margin: 0;
+  color: var(--ink-dim);
+}
+
+.cta {
+  margin: 0;
+  font-size: 20px;
+  color: var(--accent);
+}
+
+.keys {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, auto));
+  gap: 8px 22px;
+  justify-content: center;
+  max-width: 560px;
+  color: var(--ink-dim);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 24px;
+  margin-right: 4px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  font: 12px/1.4 ui-monospace, monospace;
+  color: var(--ink);
+}
+
+#hud {
+  position: fixed;
+  left: 16px;
+  bottom: 14px;
+  display: flex;
+  gap: 14px;
+  font: 12px ui-monospace, monospace;
+  color: var(--ink-dim);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}

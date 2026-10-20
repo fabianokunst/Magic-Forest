@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/git-sync.sh\" pull",
+            "timeout": 120,
+            "statusMessage": "Atualizando a partir do GitHub..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/git-sync.sh\" push",
+            "timeout": 600,
+            "statusMessage": "Enviando para o GitHub..."
+          }
+        ]
+      }
+    ]
+  }
+}
