@@ -9,6 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/style.css" />
+    <!-- o minimo para a tela de carregamento funcionar mesmo se o CSS nao carregar (arquivo aberto direto) -->
+    <style>
+      .hidden { display: none !important; }
+      body { background: #03040a; color: #eef1ff; font-family: system-ui, 'Segoe UI', sans-serif; }
+    </style>
   </head>
   <body>
     <canvas id="game"></canvas>
@@ -63,6 +68,15 @@
         <div class="bar big"><div class="fill" id="load-fill"></div></div>
       </div>
     </div>
+    <script>
+      // aberto com dois cliques (file://): o navegador bloqueia os modulos, entao o jogo nunca carregaria
+      if (location.protocol === 'file:') {
+        document.querySelector('#screen-loading .bar').style.display = 'none';
+        document.querySelector('#screen-loading .sub').innerHTML =
+          'Este arquivo não abre com dois cliques: o navegador bloqueia o jogo.<br><br>' +
+          'Dê dois cliques em <b>Jogar.bat</b>, na pasta <b>jogo</b>,<br>ou rode <code>npm run dev</code> nessa pasta.';
+      }
+    </script>
 
     <div id="screen-start" class="screen hidden">
       <div class="card wide">
