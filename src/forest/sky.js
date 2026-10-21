@@ -35,10 +35,16 @@ const fragmentShader = /* glsl */ `
     float v = clamp( 0.4 + el / 1.6, 0.002, 0.998 );
     vec3 day = texture2D( skyMap, vec2( u, v ) ).rgb;
 
-    // Sunset: tint the painting warm near the horizon and violet overhead, with a glow around the sun.
+    // Sunset: the painted teal is too saturated to tint, so the sky becomes an orange-to-violet gradient
+    // and only the painting's clouds (its greyish, unsaturated parts) are kept, recolored pink.
     float sd = max( dot( dir, uSunDir ), 0.0 );
-    vec3 dusk = mix( vec3( 1.25, 0.62, 0.38 ), vec3( 0.42, 0.34, 0.62 ), smoothstep( 0.0, 0.75, el ) );
-    vec3 sunset = day * dusk * 1.15 + vec3( 1.0, 0.55, 0.25 ) * ( pow( sd, 6.0 ) * 0.55 + pow( sd, 60.0 ) * 0.8 );
+    float sat = max( day.r, max( day.g, day.b ) ) - min( day.r, min( day.g, day.b ) );
+    float cloud = 1.0 - smoothstep( 0.1, 0.3, sat );
+    float lum = dot( day, vec3( 0.3, 0.59, 0.11 ) );
+    vec3 grad = mix( vec3( 1.0, 0.56, 0.34 ), vec3( 0.34, 0.25, 0.52 ), smoothstep( -0.02, 0.55, el ) );
+    vec3 cloudColor = mix( vec3( 1.0, 0.72, 0.6 ), vec3( 0.82, 0.58, 0.74 ), smoothstep( 0.0, 0.5, el ) ) * ( 0.55 + 0.6 * lum );
+    vec3 sunset = mix( grad, cloudColor, cloud );
+    sunset += vec3( 1.0, 0.55, 0.25 ) * ( pow( sd, 6.0 ) * 0.5 + pow( sd, 60.0 ) * 0.8 );
     sunset += vec3( 1.0, 0.85, 0.6 ) * smoothstep( 0.9992, 0.9996, sd ) * 2.5;
     day = mix( day, sunset, uDusk );
 
