@@ -1,38 +1,21 @@
-// Loads the exported .glb models and textures, then tunes their materials for real time.
+// Tunes the exported forest models' materials for real time (cutout foliage, wind, glowing lanterns).
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-const MODELS = ['tree_autumn', 'pine', 'tree_twisted', 'cabin', 'cottage', 'lamppost', 'grass'];
-const TEXTURES = ['terrain_grass', 'terrain_floor', 'terrain_dirt', 'sky'];
 const LANTERN_COLOR = 0xffb45a; // the ogre scene's lanterns are pure red; use one warm color for all
 
 // Material names come straight from the .blend files.
-const FOLIAGE = new Set(['tree leaves', 'Pine tree leaves', 'leaf']);
+export const FOLIAGE = new Set(['tree leaves', 'Pine tree leaves', 'leaf']);
 const GRASS = 'grass';
 const GLOW = 'light';
 const SMOKE = 'smoke';
 
 export const windUniforms = { uTime: { value: 0 } };
 
-export async function loadAssets(onProgress) {
-  // Vite serves public/ at the site root; without it (Live Server, GitHub Pages) the folder stays as on disk.
-  const base = import.meta.env?.BASE_URL ?? './public/';
-  const manager = new THREE.LoadingManager();
-  manager.onProgress = (_url, loaded, total) => onProgress(loaded / total);
-  const draco = new DRACOLoader(manager); // finds its decoder next to itself (node_modules via Vite, or the CDN)
-  const gltfLoader = new GLTFLoader(manager).setDRACOLoader(draco);
-  const textureLoader = new THREE.TextureLoader(manager);
-
-  const [gltfs, textures] = await Promise.all([
-    Promise.all(MODELS.map((name) => gltfLoader.loadAsync(`${base}models/${name}.glb`))),
-    Promise.all(TEXTURES.map((name) => textureLoader.loadAsync(`${base}textures/${name}.webp`))),
-  ]);
-  draco.dispose();
-
+// Returns the glowing lantern materials (their brightness follows day and night).
+export function prepareModels(models) {
   const glowMaterials = new Set();
-  const models = Object.fromEntries(MODELS.map((name, i) => [name, prepareModel(gltfs[i].scene, glowMaterials)]));
-  return { models, textures: Object.fromEntries(TEXTURES.map((name, i) => [name, textures[i]])), glowMaterials };
+  for (const root of Object.values(models)) prepareModel(root, glowMaterials);
+  return glowMaterials;
 }
 
 function prepareModel(root, glowMaterials) {
@@ -65,7 +48,6 @@ function prepareModel(root, glowMaterials) {
       m.transparent = false;
     }
   });
-  return root;
 }
 
 function cutout(m) {

@@ -1,4 +1,4 @@
-// Sky dome: the painted sky from House.blend by day, stars and moon by night.
+// Sky dome: the painted sky from House.blend by day, warm at sunset, stars and moon by night.
 import * as THREE from 'three';
 
 const vertexShader = /* glsl */ `
@@ -13,6 +13,8 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
   uniform sampler2D skyMap;
   uniform float uNight;
+  uniform float uDusk;
+  uniform vec3 uSunDir;
   uniform float uTime;
   uniform vec3 uMoonDir;
   varying vec3 vDir;
@@ -32,6 +34,13 @@ const fragmentShader = /* glsl */ `
     float u = abs( atan( dir.z, dir.x ) ) / 3.14159265;
     float v = clamp( 0.4 + el / 1.6, 0.002, 0.998 );
     vec3 day = texture2D( skyMap, vec2( u, v ) ).rgb;
+
+    // Sunset: tint the painting warm near the horizon and violet overhead, with a glow around the sun.
+    float sd = max( dot( dir, uSunDir ), 0.0 );
+    vec3 dusk = mix( vec3( 1.25, 0.62, 0.38 ), vec3( 0.42, 0.34, 0.62 ), smoothstep( 0.0, 0.75, el ) );
+    vec3 sunset = day * dusk * 1.15 + vec3( 1.0, 0.55, 0.25 ) * ( pow( sd, 6.0 ) * 0.55 + pow( sd, 60.0 ) * 0.8 );
+    sunset += vec3( 1.0, 0.85, 0.6 ) * smoothstep( 0.9992, 0.9996, sd ) * 2.5;
+    day = mix( day, sunset, uDusk );
 
     vec3 night = mix( vec3( 0.02, 0.035, 0.08 ), vec3( 0.003, 0.006, 0.018 ), smoothstep( -0.05, 0.9, el ) );
     vec3 q = dir * 120.0;
@@ -58,6 +67,8 @@ export function createSky(skyMap) {
     uniforms: {
       skyMap: { value: skyMap },
       uNight: { value: 0 },
+      uDusk: { value: 0 },
+      uSunDir: { value: new THREE.Vector3(0, 1, 0) },
       uTime: { value: 0 },
       uMoonDir: { value: new THREE.Vector3(0, 1, 0) },
     },

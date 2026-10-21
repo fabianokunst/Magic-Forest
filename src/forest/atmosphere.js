@@ -1,4 +1,4 @@
-// Lights, fog, bloom and day/night: everything blends between the DAY and NIGHT presets.
+// Lights, fog, bloom and time of day: everything blends DAY -> DUSK -> NIGHT with one number (0..1).
 import * as THREE from 'three';
 
 const DAY = {
@@ -7,24 +7,33 @@ const DAY = {
   fog: 0x86bdb8, fogDensity: 0.0065,
   exposure: 1.0, glow: 0.6, lamp: 0, fireflies: 0, bloom: 0.12, bloomThreshold: 1.4,
 };
+const DUSK = {
+  sun: 0xffa25a, sunIntensity: 2.3,
+  hemiSky: 0xf0b49a, hemiGround: 0x4a3530, hemiIntensity: 0.95,
+  fog: 0xc98f78, fogDensity: 0.0085,
+  exposure: 1.05, glow: 3.5, lamp: 3, fireflies: 0.15, bloom: 0.35, bloomThreshold: 1.0,
+};
 const NIGHT = {
   sun: 0x8fa8ff, sunIntensity: 0.6,
   hemiSky: 0x3a5088, hemiGround: 0x0e1424, hemiIntensity: 0.65,
   fog: 0x0b1326, fogDensity: 0.011,
   exposure: 1.15, glow: 8, lamp: 10, fireflies: 1, bloom: 0.85, bloomThreshold: 0.6,
 };
-const SUN_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
+export const SUN_DIR = new THREE.Vector3(0.45, 0.8, 0.35).normalize();
+export const DUSK_DIR = new THREE.Vector3(-0.62, 0.2, 0.76).normalize();
 export const MOON_DIR = new THREE.Vector3(-0.4, 0.7, -0.55).normalize();
 
 const SHADOW_EXTENT = 55;
 const SHADOW_MAP = 2048;
 const LIGHT_POOL = 6; // the nearest lamps get real point lights; the count never changes (no shader recompiles)
-const _night = new THREE.Color();
+const _a = new THREE.Color();
+const _b = new THREE.Color();
 
 export class Atmosphere {
-  constructor({ scene, renderer, sky, fireflies, glowMaterials, lamps, bloom, night = false }) {
-    Object.assign(this, { scene, renderer, sky, fireflies, glowMaterials, bloom });
-    this.night = this.target = night ? 1 : 0;
+  constructor({ scene, renderer, sky, fireflies, glowMaterials, lamps }) {
+    Object.assign(this, { scene, renderer, sky, fireflies, glowMaterials });
+    this.bloom = null; // the app's bloom pass, set while this world is on screen
+    this.time = 0;
 
     // Lanterns closer than 4 m share one point light, so a house with several lanterns
     // side by side doesn't stack lights on its wall.
@@ -52,17 +61,20 @@ export class Atmosphere {
 
     sky.material.uniforms.uMoonDir.value.copy(MOON_DIR);
     this.dir = new THREE.Vector3();
+    this.setTime(0);
+  }
+
+  // 0 = day, 0.5 = sunset, 1 = night
+  setTime(t) {
+    this.time = THREE.MathUtils.clamp(t, 0, 1);
     this.apply();
   }
 
-  toggle() {
-    this.target = this.target > 0.5 ? 0 : 1;
-  }
-
   apply() {
-    const t = this.night;
-    const mix = (key) => THREE.MathUtils.lerp(DAY[key], NIGHT[key], t);
-    const mixColor = (color, key) => color.setHex(DAY[key]).lerp(_night.setHex(NIGHT[key]), t);
+    const t = this.time;
+    const [A, B, k, dA, dB] = t < 0.5 ? [DAY, DUSK, t * 2, SUN_DIR, DUSK_DIR] : [DUSK, NIGHT, t * 2 - 1, DUSK_DIR, MOON_DIR];
+    const mix = (key) => THREE.MathUtils.lerp(A[key], B[key], k);
+    const mixColor = (color, key) => color.copy(_a.setHex(A[key])).lerp(_b.setHex(B[key]), k);
 
     mixColor(this.sun.color, 'sun');
     this.sun.intensity = mix('sunIntensity');
@@ -71,22 +83,24 @@ export class Atmosphere {
     this.hemi.intensity = mix('hemiIntensity');
     mixColor(this.scene.fog.color, 'fog');
     this.scene.fog.density = mix('fogDensity');
-    this.renderer.toneMappingExposure = mix('exposure');
+    this.exposure = mix('exposure');
     for (const m of this.glowMaterials) m.emissiveIntensity = mix('glow');
     this.fireflies.material.uniforms.uIntensity.value = mix('fireflies');
-    this.sky.material.uniforms.uNight.value = t;
-    this.bloom.strength = mix('bloom');
-    this.bloom.threshold = mix('bloomThreshold');
+    const su = this.sky.material.uniforms;
+    su.uNight.value = Math.max(0, t * 2 - 1);
+    su.uDusk.value = 1 - Math.min(1, Math.abs(t - 0.5) * 2);
     this.lampIntensity = mix('lamp');
-    this.dir.lerpVectors(SUN_DIR, MOON_DIR, t).normalize();
+    this.dir.lerpVectors(dA, dB, k).normalize();
+    su.uSunDir.value.copy(this.dir);
+    this.renderer.toneMappingExposure = this.exposure;
+    if (this.bloom) {
+      this.bloom.strength = mix('bloom');
+      this.bloom.threshold = mix('bloomThreshold');
+      this.bloom.radius = 0.6;
+    }
   }
 
   update(dt, focus) {
-    if (Math.abs(this.target - this.night) > 1e-3) {
-      this.night += (this.target - this.night) * (1 - Math.exp(-dt * 1.5));
-      this.apply();
-    }
-
     // The shadow box follows the player, snapped to whole texels to avoid shimmering.
     const texel = (2 * SHADOW_EXTENT) / SHADOW_MAP;
     this.sun.target.position.set(Math.round(focus.x / texel) * texel, focus.y, Math.round(focus.z / texel) * texel);

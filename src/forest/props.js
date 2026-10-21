@@ -23,16 +23,16 @@ export function placeProps(models) {
   const cabin = CLEARINGS.cabin;
   add(models.cabin, cabin.x, cabin.z, 0, 1, -0.05);
   for (const [dx, dz] of [[-1.9, -1.6], [1.9, -1.6], [-1.9, 1.6], [1.9, 1.6]]) {
-    colliders.push({ x: cabin.x + dx, z: cabin.z + dz, r: 2.6 });
+    colliders.push({ x: cabin.x + dx, z: cabin.z + dz, r: 2.6, h: 8 });
   }
-  colliders.push({ x: cabin.x, z: cabin.z + 5, r: 1 });
+  colliders.push({ x: cabin.x, z: cabin.z + 5, r: 1, h: 3 });
 
   // Cottage: turn its door toward where the path arrives.
   const cottage = CLEARINGS.cottage;
   const path = PATHS.toCottage;
   const [ex, ez] = path[path.length - 1];
   add(models.cottage, cottage.x, cottage.z, Math.atan2(ex - cottage.x, ez - cottage.z), COTTAGE_SCALE);
-  colliders.push({ x: cottage.x, z: cottage.z, r: 3.6 });
+  colliders.push({ x: cottage.x, z: cottage.z, r: 3.6, h: 8 });
 
   // Lampposts along the cottage path, alternating sides, lantern arm over the path.
   let side = 1;
@@ -45,12 +45,12 @@ export function placeProps(models) {
     const x = path[i][0] + nx * 2.3;
     const z = path[i][1] + nz * 2.3;
     add(models.lamppost, x, z, Math.atan2(nz, -nx), LAMPPOST_SCALE);
-    colliders.push({ x, z, r: 0.3 });
+    colliders.push({ x, z, r: 0.3, h: 5 });
     side = -side;
   }
   const glade = CLEARINGS.glade;
   add(models.lamppost, glade.x + 1.5, glade.z, 0, LAMPPOST_SCALE);
-  colliders.push({ x: glade.x + 1.5, z: glade.z, r: 0.3 });
+  colliders.push({ x: glade.x + 1.5, z: glade.z, r: 0.3, h: 5 });
 
   group.updateMatrixWorld(true);
   const lamps = [];

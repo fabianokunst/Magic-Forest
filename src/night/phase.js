@@ -5,9 +5,11 @@ import { Lanterns } from './lanterns.js';
 import { Fireflies } from './fireflies.js';
 import { Shadows } from './shadows.js';
 import { Apples } from './apples.js';
-import { Ogre } from './ogre.js';
-import { CameraRig } from './camera.js';
-import { ParticlePool, Rings } from './fx.js';
+import { Ogre } from '../core/ogre.js';
+import { CameraRig } from '../core/camera.js';
+import { ParticlePool, Rings } from '../core/fx.js';
+import { Phase, clockText } from '../core/phase.js';
+import { ICONS } from '../core/icons.js';
 
 const CARDINAL = [
   { name: 'leste', a: 0 },
@@ -17,10 +19,14 @@ const CARDINAL = [
 ];
 const rand = (a, b) => a + Math.random() * (b - a);
 
-export class Game {
-  constructor({ scene, camera, assets, hud, sfx, input }) {
-    Object.assign(this, { scene, camera, hud, sfx, input });
-    this.world = new World(scene, assets);
+// Fase 1 — A Noite das Sombras: manter a lareira acesa ate o amanhecer.
+export class NightPhase extends Phase {
+  constructor(app) {
+    super(app);
+    const scene = (this.scene = new THREE.Scene());
+    scene.fog = new THREE.FogExp2(0x070b1a, 0.05);
+    const assets = app.assets;
+    this.world = new World(scene, assets.night);
     this.fx = {
       add: new ParticlePool(scene, 1400, THREE.AdditiveBlending, 1.5),
       norm: new ParticlePool(scene, 1000, THREE.NormalBlending, 1.0),
@@ -33,26 +39,42 @@ export class Game {
     this.shadows = new Shadows(scene, this.fx, this.world, this.lanterns);
     this.apples = new Apples(scene, this.fx, this.world);
     this.ogre = new Ogre(assets.ogre, scene);
-    this.rig = new CameraRig(camera);
-    this.spawnPoint = assets.level.ogre.spawn;
-    this.clock = 0;
-    this.state = 'menu';
+    this.rig = new CameraRig(this.camera);
+    this.spawnPoint = assets.night.level.ogre.spawn;
     this._v = new THREE.Vector3();
 
     this.shadowCtx = {
       ogre: { x: 0, z: 0, carrying: 0 },
       hearth: 1,
       progress: 0,
-      camPos: camera.position,
+      camPos: this.camera.position,
       onSteal: (s) => this._onSteal(s),
       onHouse: (s, dt) => this._onHouse(s, dt),
       onLanternOut: (l) => this._onLanternOut(l),
       onDie: (s, cause) => this._onShadowDie(s, cause),
     };
+    this.map = {
+      cx: 0, cz: 0, radius: CONFIG.worldRadius, yaw: 0, ogre: { x: 0, z: 0, yaw: 0 },
+      draw: (c, S, t) => this._drawMap(c, S, t),
+    };
     this.reset();
   }
 
+  enter() {
+    this.sfx.ambient('night');
+  }
+
+  hudSetup() {
+    this.hud.configure({
+      goal: { icon: ICONS.fire, label: 'Lareira', theme: 'hearth' },
+      clock: { from: ICONS.moon, to: ICONS.sun, theme: 'night' },
+      slots: true,
+      crosshair: true,
+    });
+  }
+
   reset() {
+    this._resetBase();
     this.time = 0;
     this.progress = 0;
     this.dawn = 0;
@@ -62,11 +84,9 @@ export class Game {
     this.roarCd = 0;
     this.throwCd = 0;
     this.stats = { delivered: 0, banished: 0, thrown: 0, lit: 0, roars: 0, hits: 0 };
-    this.pending = [];
-    this.cooldowns = {};
     this.tutorial = {};
     this.spawnTimer = 3;
-    this.waves = [0.3, 0.55, 0.8];
+    this.waves = [...CONFIG.waves];
     this.houseAttacked = 0;
     this.smokeT = 0;
     this.moveDir = { x: 0, z: 0 };
@@ -83,50 +103,22 @@ export class Game {
     this.apples.reset();
     this.fx.add.clear();
     this.fx.norm.clear();
-    this.hud.clearToasts();
   }
 
   start() {
     this.state = 'playing';
     this.sfx.start();
-    this.later(0.6, () => this.hud.toast('Junte os <b class="c-fire">vagalumes</b> que brilham pela floresta', '', 4));
-    this.later(5, () => {
+    this.hud.banner('<small>Fase 1</small>A Noite das Sombras');
+    this.later(1.2, () => this.hud.toast('Junte os <b class="c-fire">vagalumes</b> que brilham pela floresta', '', 4));
+    this.later(5.5, () => {
       if (!this.tutorial.delivered) this.hud.toast('Leve-os até a <b class="c-hearth">porta de casa</b> para alimentar a lareira', '', 4.5);
     });
   }
 
-  pause() {
-    if (this.state === 'playing') this.state = 'paused';
-  }
-
-  resume() {
-    if (this.state === 'paused') this.state = 'playing';
-  }
-
-  later(t, fn) {
-    this.pending.push({ t, fn });
-  }
-
-  // limita a repeticao de avisos
-  once(key, cooldown) {
-    if ((this.cooldowns[key] ?? -Infinity) > this.clock) return false;
-    this.cooldowns[key] = this.clock + cooldown;
-    return true;
-  }
-
   update(dt) {
-    this.clock += dt;
-    const playing = this.state === 'playing';
+    this._tickPending(dt);
+    const playing = this.playing;
     const t = this.clock;
-
-    for (let i = this.pending.length - 1; i >= 0; i--) {
-      const p = this.pending[i];
-      p.t -= dt;
-      if (p.t <= 0) {
-        this.pending.splice(i, 1);
-        p.fn();
-      }
-    }
 
     if (playing) {
       this.time += dt;
@@ -153,7 +145,7 @@ export class Game {
 
     const catcher = og.bucketWorld(this._v);
     this.fireflies.update(dt, t, {
-      spawn: this.state !== 'won' && this.state !== 'lost',
+      spawn: !this.over,
       catcher,
       canCatch: playing && og.mode === 'play' && og.invuln <= 0 && this.carried < CONFIG.bucketCapacity,
       onCatch: (f) => this._onCatch(f),
@@ -171,7 +163,7 @@ export class Game {
       shadows: this.shadows,
       ogre: og.pos,
       canPickup: playing && this.appleCount < CONFIG.apples.max,
-      onHit: (s, p) => this._onAppleHit(s, p),
+      onHit: (s) => this._onAppleHit(s),
       onPickup: () => {
         this.appleCount++;
         this.sfx.pop();
@@ -185,14 +177,11 @@ export class Game {
     this.rings.update(dt);
     this.world.update(dt, t, this.dawn, Math.max(0, this.hearth), og.pos);
 
-    const orbit = this.state === 'menu' || this.state === 'won' || this.state === 'lost';
+    const orbit = this.state === 'menu' || this.over;
     this.rig.update(dt, this.input, og.pos, this.world, orbit);
 
-    if (playing || this.state === 'paused') {
-      this.hud.update(this, dt);
-      this.hud.minimap(this, t);
-      if (playing) this._hints();
-    }
+    if (playing || this.state === 'paused') this._updateHud(t);
+    if (playing) this._hints();
 
     if (playing) {
       if (this.hearth <= 0) this._lose();
@@ -200,18 +189,32 @@ export class Game {
     }
   }
 
+  _updateHud(t) {
+    const hud = this.hud;
+    const h = Math.max(0, this.hearth);
+    hud.setGoal(h, `${Math.round(h * 100)}%`, h < 0.25);
+    hud.setClock(clockText(20 * 60 + this.progress * 600), this.progress);
+    hud.setSlots(this.appleCount, this.carried, CONFIG.bucketCapacity);
+    hud.setStamina(this.ogre.stamina, this.ogre.tired);
+    hud.setRoar(this.roarCd, CONFIG.roar.cooldown);
+    const m = this.map;
+    m.yaw = this.rig.yaw;
+    m.ogre.x = this.ogre.pos.x;
+    m.ogre.z = this.ogre.pos.z;
+    m.ogre.yaw = this.ogre.yaw;
+    hud.minimap(m, t);
+  }
+
   // ------------------------------------------------------------- controles
 
   _controls() {
-    const inp = this.input;
-    const a = inp.axis();
-    const f = this.rig.forward();
-    this.moveDir.x = -f.z * a.x + f.x * a.y;
-    this.moveDir.z = f.x * a.x + f.z * a.y;
-    this.wantRun = inp.down('ShiftLeft', 'ShiftRight');
-    if (inp.hit('Space')) this._roar();
-    if ((inp.clicked && inp.locked) || inp.hit('KeyF')) this._throw();
-    if (inp.hit('KeyE')) this._interact();
+    const c = this.readControls();
+    this.moveDir.x = c.mx;
+    this.moveDir.z = c.mz;
+    this.wantRun = c.run;
+    if (c.roar) this._roar();
+    if (c.throw) this._throw();
+    if (c.act) this._interact();
   }
 
   _roar() {
@@ -395,7 +398,7 @@ export class Game {
   }
 
   _onSteal(s) {
-    if (this.ogre.invuln > 0 || this.state !== 'playing') return false;
+    if (this.ogre.invuln > 0 || !this.playing) return false;
     const o = this.ogre.pos;
     if (this.carried > 0) {
       const n = Math.min(3, this.carried);
@@ -435,7 +438,7 @@ export class Game {
   }
 
   _onLanternOut(l) {
-    if (this.state !== 'playing') return;
+    if (!this.playing) return;
     this.fx.norm.burst(10, () => ({
       x: l.head.x, y: l.head.y, z: l.head.z, vy: rand(0.3, 0.8), vx: rand(-0.2, 0.2), vz: rand(-0.2, 0.2),
       life: 1.4, s0: 0.1, s1: 0.4, r: 0.15, g: 0.15, b: 0.17, a0: 0.6, a1: 0, drag: 1,
@@ -446,14 +449,14 @@ export class Game {
     }
   }
 
-  _onShadowDie(s, cause) {
+  _onShadowDie(s) {
     this.stats.banished++;
     const n = s.big ? 3 : 1;
     for (let i = 0; i < n; i++) this.fireflies.spawnAt(s.x + rand(-0.2, 0.2), 0.5, s.z + rand(-0.2, 0.2));
     if (this.once('die', 0.08)) this.sfx.shadowDie();
   }
 
-  _onAppleHit(s, p) {
+  _onAppleHit(s) {
     this.sfx.appleHit();
     this.shadows.damage(s, 1, this.shadowCtx, this.ogre.pos.x, this.ogre.pos.z);
   }
@@ -474,7 +477,7 @@ export class Game {
       if (this.shadows.activeCount() < maxAlive) {
         this.shadows.spawn(p > 0.35 && Math.random() < (p - 0.3) * 0.7);
       }
-      this.spawnTimer = THREE.MathUtils.lerp(9, 3, Math.pow(p, 0.85)) * rand(0.7, 1.3);
+      this.spawnTimer = THREE.MathUtils.lerp(7, 2.6, Math.pow(p, 0.85)) * rand(0.7, 1.3);
     }
     if (this.waves.length && p >= this.waves[0]) {
       const w = this.waves.shift();
@@ -488,7 +491,7 @@ export class Game {
       this.tutorial.dawnSoon = true;
       this.hud.toast('Falta pouco para o amanhecer!', '', 3);
     }
-    if (this.hearth < 0.25 && this.once('lowHearth', 18)) {
+    if (this.hearth < 0.25 && this.once('lowHearth', 15)) {
       this.hud.toast('A lareira está fraca! Traga vagalumes para casa', 'warn', 3);
     }
   }
@@ -507,7 +510,7 @@ export class Game {
   }
 
   _hints() {
-    if (!this.input.locked) return this.hud.hint('Clique na tela para controlar a câmera');
+    if (this.needsLockHint()) return;
     const o = this.ogre.pos;
     const l = this.lanterns.nearest(o.x, o.z, CONFIG.lantern.reach);
     if (l) {
@@ -529,37 +532,94 @@ export class Game {
     this.hud.hint(null);
   }
 
-  // ------------------------------------------------------------- fim
+  _drawMap(c, S, time) {
+    for (const l of this.lanterns.list) {
+      const r = this.lanterns.radius(l);
+      if (r > 0) {
+        const grd = c.createRadialGradient(l.x * S, l.z * S, 0, l.x * S, l.z * S, r * S);
+        grd.addColorStop(0, 'rgba(255,190,90,0.35)');
+        grd.addColorStop(1, 'rgba(255,190,90,0)');
+        c.fillStyle = grd;
+        c.beginPath();
+        c.arc(l.x * S, l.z * S, r * S, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+    const h = Math.max(0, this.hearth);
+    const hr = this.world.houseLightRadius(h) * S;
+    const hg = c.createRadialGradient(0, 0, 0, 0, 0, hr);
+    hg.addColorStop(0, `rgba(255,140,60,${0.2 + 0.3 * h})`);
+    hg.addColorStop(1, 'rgba(255,140,60,0)');
+    c.fillStyle = hg;
+    c.beginPath();
+    c.arc(0, 0, hr, 0, Math.PI * 2);
+    c.fill();
 
-  _endStats() {
-    const mins = 20 * 60 + Math.floor(this.progress * 600);
-    return {
-      ...this.stats,
-      hearth: this.hearth,
-      clock: `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`,
-    };
+    c.fillStyle = 'rgba(40,70,40,0.9)';
+    for (const t of this.world.trees) {
+      c.beginPath();
+      c.arc(t.x * S, t.z * S, Math.max(2, t.col * S), 0, Math.PI * 2);
+      c.fill();
+    }
+    const attacked = this.houseAttacked > 0 && Math.floor(time * 6) % 2 === 0;
+    c.fillStyle = attacked ? '#ff4a6a' : `rgb(${120 + 135 * h},${70 + 80 * h},40)`;
+    const hs = 0.97 * S;
+    c.fillRect(-hs, -hs, hs * 2, hs * 2);
+
+    for (const l of this.lanterns.list) {
+      c.fillStyle = l.fuel > 0.01 ? '#ffd27a' : '#555a70';
+      c.beginPath();
+      c.arc(l.x * S, l.z * S, 3, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.fillStyle = '#7dffa8';
+    for (const f of this.fireflies.list) c.fillRect(f.x * S - 1, f.z * S - 1, 2, 2);
+    c.fillStyle = '#ff5a4a';
+    for (const a of this.apples.ground) c.fillRect(a.m.position.x * S - 1.5, a.m.position.z * S - 1.5, 3, 3);
+    for (const s of this.shadows.list) {
+      if (s.state === 'dying') continue;
+      c.fillStyle = s.attacking && Math.floor(time * 8) % 2 ? '#ff4a6a' : '#b77dff';
+      c.beginPath();
+      c.arc(s.x * S, s.z * S, s.big ? 4.5 : 3, 0, Math.PI * 2);
+      c.fill();
+    }
   }
 
+  // ------------------------------------------------------------- fim
+
   _win() {
-    this.state = 'won';
-    this.input.releaseLock();
-    this.hud.hint(null);
     for (const s of this.shadows.list) this.shadows.kill(s, 'dawn', null);
-    this.ogre.setMode('celebrate');
-    this.sfx.win();
-    const moons = this.hearth > 0.6 ? 3 : this.hearth > 0.3 ? 2 : 1;
-    const stats = this._endStats();
-    this.later(2.4, () => this.hud.showEnd(true, stats, moons));
+    const h = this.hearth;
+    const stars = h > 0.6 ? 3 : h > 0.3 ? 2 : 1;
+    this.finish({
+      win: true,
+      stars,
+      title: 'O sol nasceu!',
+      sub: 'O ogro manteve a casinha acesa a noite inteira.',
+      stats: this._stats([['Lareira ao amanhecer', `${Math.round(Math.max(0, h) * 100)}%`]]),
+    });
   }
 
   _lose() {
-    this.state = 'lost';
     this.hearth = 0;
-    this.input.releaseLock();
-    this.hud.hint(null);
-    this.ogre.setMode('sad');
-    this.sfx.lose();
-    const stats = this._endStats();
-    this.later(2.6, () => this.hud.showEnd(false, stats, 0));
+    this.finish({
+      win: false,
+      stars: 0,
+      title: 'A lareira se apagou…',
+      sub: 'As sombras ficaram com a floresta desta vez. Tente de novo!',
+      stats: this._stats([['Aguentou até', clockText(20 * 60 + this.progress * 600)]]),
+    }, 2.6);
+  }
+
+  _stats(first) {
+    const s = this.stats;
+    return [
+      ...first,
+      ['Vagalumes entregues', s.delivered],
+      ['Lanternas acesas', s.lit],
+      ['Sombras espantadas', s.banished],
+      ['Maçãs arremessadas', s.thrown],
+      ['Rugidos', s.roars],
+    ];
   }
 }

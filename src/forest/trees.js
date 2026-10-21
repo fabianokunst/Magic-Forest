@@ -24,6 +24,7 @@ function pickSpecies(x, z, rand) {
 export function createForest(models, rand) {
   const placements = { autumn: [], pine: [], twisted: [] };
   const colliders = [];
+  const trees = []; // kind, scale and base height of every tree (for canopy shade)
   const cell = 9.5;
   const half = WORLD_SIZE / 2 - 12;
   const pos = new THREE.Vector3();
@@ -51,7 +52,8 @@ export function createForest(models, rand) {
       ) - 0.15;
       euler.set((rand() - 0.5) * 0.08, rand() * Math.PI * 2, (rand() - 0.5) * 0.08);
       placements[kind].push(new THREE.Matrix4().compose(pos.set(x, y, z), rot.setFromEuler(euler), scl.setScalar(s)));
-      colliders.push({ x, z, r: sp.trunk * s });
+      colliders.push({ x, z, r: sp.trunk * s, h: 4.5 });
+      trees.push({ x, z, y, kind, model: sp.model, s });
     }
   }
 
@@ -59,5 +61,5 @@ export function createForest(models, rand) {
     instanceChunks(models[SPECIES[kind].model], list, { chunkSize: TREE_CHUNK }),
   );
   const counts = Object.fromEntries(Object.entries(placements).map(([k, v]) => [k, v.length]));
-  return { chunks, colliders, counts };
+  return { chunks, colliders, trees, counts };
 }
