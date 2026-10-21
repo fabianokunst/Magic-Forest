@@ -1,5 +1,5 @@
 @echo off
-rem Abre "A Noite do Ogro" no navegador. Feche esta janela para parar o jogo.
+rem Abre o jogo Magic Forest no navegador. Feche esta janela para parar o jogo.
 cd /d "%~dp0"
 
 where node >nul 2>nul
@@ -18,6 +18,6 @@ if not exist node_modules (
   )
 )
 
-echo Abrindo A Noite do Ogro no navegador. Feche esta janela para parar o jogo.
+echo Abrindo Magic Forest no navegador. Feche esta janela para parar o jogo.
 call npx vite --open
 pause

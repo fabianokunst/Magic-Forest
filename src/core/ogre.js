@@ -277,7 +277,7 @@ export class Ogre {
       const a = time * (1.2 + (i % 3) * 0.4) + i * 2.4;
       const rr = (0.035 + (i % 4) * 0.012) * s;
       const y = p.y + (0.1 + 0.03 * Math.sin(time * 2.6 + i * 1.7)) * s;
-      this.orbs.push(p.x + Math.cos(a) * rr, y, p.z + Math.sin(a) * rr, r, g, b, 0.05 * s, 0.9);
+      this.orbs.push(p.x + Math.cos(a) * rr, y, p.z + Math.sin(a) * rr, r, g, b, (s > 1 ? 0.03 : 0.05) * s, 0.9);
     }
     this.orbs.end();
     this.applePile.visible = apples > 0;

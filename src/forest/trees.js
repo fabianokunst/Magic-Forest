@@ -10,7 +10,7 @@ export const TREE_CHUNK = 60;
 const SPECIES = {
   autumn: { model: 'tree_autumn', scale: [0.9, 1.35], trunk: 0.7 },
   pine: { model: 'pine', scale: [1.3, 1.9], trunk: 0.45 },
-  twisted: { model: 'tree_twisted', scale: [2.1, 2.8], trunk: 0.45 },
+  twisted: { model: 'tree_twisted', scale: [2.1, 2.8], trunk: 0.55 },
 };
 
 // Twisted red trees around the cottage, pines toward the north-west, autumn trees elsewhere.
@@ -53,7 +53,7 @@ export function createForest(models, rand) {
       euler.set((rand() - 0.5) * 0.08, rand() * Math.PI * 2, (rand() - 0.5) * 0.08);
       placements[kind].push(new THREE.Matrix4().compose(pos.set(x, y, z), rot.setFromEuler(euler), scl.setScalar(s)));
       colliders.push({ x, z, r: sp.trunk * s, h: 4.5 });
-      trees.push({ x, z, y, kind, model: sp.model, s });
+      trees.push({ x, z, y, kind, model: sp.model, s, rot: euler.y });
     }
   }
 

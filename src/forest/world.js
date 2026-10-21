@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { FOLIAGE, prepareModels, windUniforms } from './materials.js';
-import { mulberry32 } from './layout.js';
+import { CLEARINGS, mulberry32 } from './layout.js';
 import { createTerrain, heightAt } from './terrain.js';
 import { createSky } from './sky.js';
 import { createForest, TREE_CHUNK } from './trees.js';
@@ -54,7 +54,7 @@ export class ForestWorld {
       this.grid.get(key).push(c);
     }
 
-    // copa de cada arvore (altura do centro e raio), medida nas folhas do modelo
+    // copa de cada arvore (altura do centro, meia altura e raio), medida nas folhas do modelo
     const canopy = {};
     for (const name of ['tree_autumn', 'pine', 'tree_twisted']) {
       const box = new THREE.Box3();
@@ -63,13 +63,51 @@ export class ForestWorld {
         if (o.isMesh && FOLIAGE.has(o.material.name)) box.expandByObject(o);
       });
       const size = box.getSize(new THREE.Vector3());
-      canopy[name] = { y: box.getCenter(new THREE.Vector3()).y, r: Math.max(size.x, size.z) / 2 };
+      canopy[name] = { y: box.getCenter(new THREE.Vector3()).y, hy: size.y / 2, r: Math.max(size.x, size.z) / 2 };
     }
-    this.trees = forest.trees.map((t) => ({
-      ...t,
-      canopyY: t.y + canopy[t.model].y * t.s,
-      canopyR: canopy[t.model].r * t.s,
-    }));
+    // formato real dos troncos (e galhos) em fatias de 1 m de altura, para a camera nao entrar neles
+    const slices = {};
+    const v = new THREE.Vector3();
+    for (const name of Object.keys(canopy)) {
+      const buckets = [];
+      models[name].traverse((o) => {
+        if (!o.isMesh || FOLIAGE.has(o.material.name)) return;
+        const pos = o.geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
+          (buckets[Math.max(0, Math.floor(v.y))] ??= []).push(v.x, v.z);
+        }
+      });
+      slices[name] = Array.from(buckets, (b) => {
+        if (!b) return null;
+        const n = b.length / 2;
+        let cx = 0, cz = 0;
+        for (let i = 0; i < n; i++) { cx += b[i * 2]; cz += b[i * 2 + 1]; }
+        cx /= n;
+        cz /= n;
+        const d = [];
+        for (let i = 0; i < n; i++) d.push(Math.hypot(b[i * 2] - cx, b[i * 2 + 1] - cz));
+        d.sort((a, b2) => a - b2);
+        return { x: cx, z: cz, r: d[Math.floor(0.85 * (n - 1))] }; // ignora as pontas dos galhos
+      });
+    }
+    this.trees = forest.trees.map((t, i) => {
+      const tree = {
+        ...t,
+        canopyY: t.y + canopy[t.model].y * t.s,
+        canopyR: canopy[t.model].r * t.s,
+        canopyH: canopy[t.model].hy * t.s,
+        slices: slices[t.model],
+      };
+      forest.colliders[i].tree = tree;
+      return tree;
+    });
+
+    // casas: tambem fazem sombra no chao
+    this.houses = [
+      { x: CLEARINGS.cabin.x, z: CLEARINGS.cabin.z, r: 4.2, h: 7 },
+      { x: CLEARINGS.cottage.x, z: CLEARINGS.cottage.z, r: 4.5, h: 7 },
+    ];
 
     this.ogre = new Ogre(assets.ogre, scene, { scale: OGRE_SCALE, shadows: true });
     this.bound = null;
@@ -131,7 +169,19 @@ export class ForestWorld {
     if (p.y < g + 0.3) return true;
     let blocked = false;
     this.forNear(p.x, p.z, (c) => {
-      if (!blocked && p.y < g + c.h && Math.hypot(p.x - c.x, p.z - c.z) < c.r + 0.45) blocked = true;
+      if (blocked) return;
+      const t = c.tree;
+      if (!t) {
+        if (p.y < g + c.h && Math.hypot(p.x - c.x, p.z - c.z) < c.r + 0.45) blocked = true;
+        return;
+      }
+      // fatia do tronco na altura da camera, girada e escalada como a arvore
+      const sl = t.slices[Math.floor((p.y - t.y) / t.s)];
+      if (!sl) return;
+      const cos = Math.cos(t.rot), sin = Math.sin(t.rot);
+      const wx = t.x + (sl.x * cos + sl.z * sin) * t.s;
+      const wz = t.z + (-sl.x * sin + sl.z * cos) * t.s;
+      if (Math.hypot(p.x - wx, p.z - wz) < sl.r * t.s + 0.4) blocked = true;
     });
     return blocked;
   }

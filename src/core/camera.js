@@ -48,9 +48,11 @@ export class CameraRig {
       this.target.y + sp * d,
       this.target.z + Math.cos(this.yaw) * cp * d,
     );
-    let allowed = this.dist;
-    for (; allowed > 0.6 * S; allowed -= 0.1 * S) {
-      if (!world.cameraBlocked(place(allowed))) break;
+    // anda do ogro ate a camera: o primeiro obstaculo no caminho limita a distancia (nada fica na frente)
+    let allowed = 0.6 * S;
+    for (let d = allowed; d <= this.dist + 1e-6; d += 0.1 * S) {
+      if (world.cameraBlocked(place(d))) break;
+      allowed = d;
     }
     this.curDist = allowed < this.curDist ? allowed : this.curDist + (allowed - this.curDist) * Math.min(1, dt * 4);
     place(this.curDist);

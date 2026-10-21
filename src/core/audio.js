@@ -4,6 +4,12 @@ export class Sfx {
   constructor() {
     this.ctx = null;
     this.muted = false;
+    this.mode = 'night'; // som ambiente: 'night' (grilos), 'day' (passarinhos), 'dusk' (os dois)
+    this.evening = 0;    // no entardecer: 0 so passarinhos ... 1 so grilos
+  }
+
+  ambient(mode) {
+    this.mode = mode;
   }
 
   start() {
@@ -85,14 +91,30 @@ export class Sfx {
     g.gain.value = 0.05;
     src.connect(f).connect(g).connect(this.master);
     src.start();
-    // grilos
-    const chirp = () => {
+    // grilos a noite, passarinhos de dia
+    const tick = () => {
       if (!this.ctx) return;
-      const base = 4200 + Math.random() * 600;
-      for (let i = 0; i < 3; i++) this._tone('sine', base, base * 1.02, 0.035, 0.012, i * 0.07);
-      setTimeout(chirp, 700 + Math.random() * 2200);
+      const night = this.mode === 'night' || (this.mode === 'dusk' && Math.random() < this.evening);
+      if (night) this._cricket();
+      else this._bird();
+      setTimeout(tick, night ? 700 + Math.random() * 2200 : 900 + Math.random() * 2600);
     };
-    chirp();
+    tick();
+  }
+
+  _cricket() {
+    const base = 4200 + Math.random() * 600;
+    for (let i = 0; i < 3; i++) this._tone('sine', base, base * 1.02, 0.035, 0.012, i * 0.07);
+  }
+
+  _bird() {
+    const base = 2200 + Math.random() * 1600;
+    const n = 2 + Math.floor(Math.random() * 4);
+    const up = Math.random() < 0.5;
+    for (let i = 0; i < n; i++) {
+      const f = base * (1 + (up ? i : n - i) * 0.06);
+      this._tone('sine', f, f * (Math.random() < 0.5 ? 1.35 : 0.75), 0.07, 0.018, i * 0.11);
+    }
   }
 
   pickup(n = 0) {
@@ -179,6 +201,43 @@ export class Sfx {
 
   denied() {
     this._tone('square', 180, 150, 0.12, 0.05);
+  }
+
+  // sombra virando borboleta
+  transform() {
+    [784, 988, 1175, 1568, 1976].forEach((f, i) => this._tone('sine', f, f * 1.01, 0.35, 0.07, i * 0.06));
+    this._noise(0.6, 0.05, 'highpass', 5000, 9000, 0.7, 0.05);
+  }
+
+  sizzle() {
+    this._noise(0.18, 0.05, 'bandpass', 3200, 2200, 2);
+  }
+
+  // sombra assustada
+  squeak() {
+    const f = 850 + Math.random() * 250;
+    this._tone('triangle', f, f * 1.7, 0.13, 0.06);
+  }
+
+  giggle() {
+    const f = 620 + Math.random() * 160;
+    [1, 1.18, 1, 1.18].forEach((k, i) => this._tone('triangle', f * k, f * k * 0.96, 0.07, 0.05, i * 0.085));
+  }
+
+  boo() {
+    this._noise(0.5, 0.18, 'lowpass', 900, 150);
+    this._tone('triangle', 520, 140, 0.45, 0.12);
+  }
+
+  mushroom(n = 0) {
+    const f = 660 * Math.pow(1.06, Math.min(n, 12));
+    this._tone('sine', f, f, 0.5, 0.09);
+    this._tone('sine', f * 2.01, f * 2.01, 0.35, 0.04, 0.02);
+    this._tone('triangle', f * 0.5, f * 0.75, 0.08, 0.06);
+  }
+
+  chime() {
+    [523, 784, 1046].forEach((f, i) => this._tone('sine', f, f, 0.8, 0.07, i * 0.12));
   }
 
   win() {

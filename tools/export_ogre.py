@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Exporta "ogro e sua casa.blend" para o jogo web (Three.js).
+Exporta "ogro e sua casa.blend" para o jogo web (Three.js): a casinha da fase 1 e o ogro de todas as fases.
 
-Uso (a partir da pasta jogo/):
-  "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b "../ogro e sua casa.blend" ^
-      --python tools/export_assets.py -- public/assets [--preview pasta_previews]
+Uso (a partir da pasta do projeto; ou simplesmente npm run export-ogre):
+  "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b "ogro e sua casa.blend" ^
+      --python tools/export_ogre.py -- public/ogre [--preview pasta_previews]
 
-Gera em public/assets/:
+Gera em public/ogre/:
   scene.glb      cenario (casa, arvores, montanhas, poste, estrelas)
   ogre.glb       ogro + balde + animacoes
   instances.bin  matrizes (float32, column-major) das folhas e da grama, que no .blend sao particulas
@@ -33,7 +33,7 @@ if "--preview" in argv:
     del argv[i:i + 2]
 
 BLEND_DIR = os.path.dirname(bpy.data.filepath)
-OUT = os.path.abspath(argv[0]) if argv else os.path.join(BLEND_DIR, "jogo", "public", "assets")
+OUT = os.path.abspath(argv[0]) if argv else os.path.join(BLEND_DIR, "public", "ogre")
 TEX_OUT = os.path.join(OUT, "textures")
 os.makedirs(TEX_OUT, exist_ok=True)
 
