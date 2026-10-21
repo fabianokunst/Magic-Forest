@@ -8,7 +8,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="./src/style.css" />
+    <!-- de onde o navegador baixa o three.js quando o jogo roda sem o Vite (Live Server, GitHub Pages).
+         O Vite ignora isto e usa o node_modules. Mantenha a versao igual a do package.json. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+        }
+      }
+    </script>
     <!-- o minimo para a tela de carregamento funcionar mesmo se o CSS nao carregar (arquivo aberto direto) -->
     <style>
       .hidden { display: none !important; }
@@ -74,7 +84,7 @@
         document.querySelector('#screen-loading .bar').style.display = 'none';
         document.querySelector('#screen-loading .sub').innerHTML =
           'Este arquivo não abre com dois cliques: o navegador bloqueia o jogo.<br><br>' +
-          'Dê dois cliques em <b>Jogar.bat</b>, na pasta <b>jogo</b>,<br>ou rode <code>npm run dev</code> nessa pasta.';
+          'Dê dois cliques em <b>Jogar.bat</b>, na pasta <b>jogo</b>,<br>ou abra com o <b>Live Server</b> do VS Code.';
       }
     </script>
 
@@ -125,6 +135,6 @@
       </div>
     </div>
 
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

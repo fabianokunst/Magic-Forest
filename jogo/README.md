@@ -41,7 +41,14 @@ Sombras grandes (3 de vida) aparecem da metade da noite em diante e vão direto 
 
 ## Como rodar
 
-Requer Node.js 18 ou mais recente.
+**Online:** https://fabianokunst.github.io/Magic-Forest/jogo/ (o GitHub Pages publica a branch `main` sozinho).
+
+**No VS Code:** botão direito no `jogo/index.html` → *Open with Live Server*.
+
+Nesses dois casos o three.js vem da CDN definida no `<script type="importmap">` do `index.html`
+(precisa de internet); ao atualizar o three no `package.json`, troque a versão lá também.
+
+Os jeitos abaixo usam o Vite e requerem Node.js 18 ou mais recente.
 
 **Jeito fácil (Windows):** dê dois cliques em `Jogar.bat`. Na primeira vez ele instala as dependências.
 Depois abre o jogo no navegador. Feche a janela preta para parar.
@@ -55,7 +62,7 @@ npm run dev        # abre http://localhost:5180 (ou a próxima porta livre)
 ```
 
 > O `index.html` **não abre com dois cliques**: o navegador bloqueia módulos JavaScript em `file://`.
-> O jogo precisa de um servidor local, que é o que o `Jogar.bat` e o `npm run dev` fazem.
+> O jogo precisa de um servidor local, que é o que o `Jogar.bat`, o `npm run dev` e o Live Server fazem.
 > O mesmo vale para `dist/index.html`.
 
 `npm run build` gera a versão estática em `dist/`, que pode ser publicada em qualquer servidor estático

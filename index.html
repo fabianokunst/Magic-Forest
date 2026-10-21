@@ -5,7 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Magic Forest</title>
     <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="./src/style.css" />
+    <!-- Where the browser gets three.js when the page runs without Vite (Live Server, GitHub Pages).
+         Vite ignores this and uses node_modules. Keep the version in sync with package.json. -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="loading">
@@ -32,6 +42,6 @@
       <span id="hud-fps"></span>
     </div>
 
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="./src/main.js"></script>
   </body>
 </html>

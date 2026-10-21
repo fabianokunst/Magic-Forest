@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const BASE = import.meta.env.BASE_URL + 'assets/';
+// o Vite serve public/ na raiz do site; sem ele (Live Server, GitHub Pages) a pasta fica como esta no disco
+const BASE = (import.meta.env?.BASE_URL ?? './public/') + 'assets/';
 
 export async function loadAssets(onProgress) {
   const manager = new THREE.LoadingManager();

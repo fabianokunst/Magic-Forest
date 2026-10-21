@@ -16,10 +16,11 @@ const SMOKE = 'smoke';
 export const windUniforms = { uTime: { value: 0 } };
 
 export async function loadAssets(onProgress) {
-  const base = import.meta.env.BASE_URL;
+  // Vite serves public/ at the site root; without it (Live Server, GitHub Pages) the folder stays as on disk.
+  const base = import.meta.env?.BASE_URL ?? './public/';
   const manager = new THREE.LoadingManager();
   manager.onProgress = (_url, loaded, total) => onProgress(loaded / total);
-  const draco = new DRACOLoader(manager); // its decoder files are bundled by Vite
+  const draco = new DRACOLoader(manager); // finds its decoder next to itself (node_modules via Vite, or the CDN)
   const gltfLoader = new GLTFLoader(manager).setDRACOLoader(draco);
   const textureLoader = new THREE.TextureLoader(manager);
 

@@ -4,6 +4,14 @@ Floresta 3D jogável no navegador (Three.js), montada a partir dos modelos de `H
 
 ## Rodar
 
+Online: https://fabianokunst.github.io/Magic-Forest/ (o GitHub Pages publica a branch `main` sozinho).
+
+No VS Code, também abre com o **Live Server** (botão direito no `index.html` → *Open with Live Server*).
+Nesses dois casos o three.js vem da CDN definida no `<script type="importmap">` do `index.html`;
+ao atualizar o three no `package.json`, troque a versão lá também.
+
+Com o Vite:
+
 ```bash
 npm install
 npm run dev        # abre em http://localhost:5173
