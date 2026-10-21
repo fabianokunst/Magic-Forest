@@ -33,6 +33,7 @@ reduz texturas para 1024 px em WebP, aplica os nós Hue/Saturation na própria t
 para Principled BSDF, transforma as folhas em partículas da árvore retorcida em geometria real e comprime com Draco.
 O que vai em cada modelo fica em `ASSETS` no topo de `tools/export_assets.py`.
 Se o Blender não estiver em `C:\Program Files\Blender Foundation\Blender 5.2`, defina a variável `BLENDER`.
+Os `.blend` e a pasta `texture/` não vão para o GitHub (estão no `.gitignore`): ficam só no PC, na raiz do projeto.
 
 ## Estrutura
 

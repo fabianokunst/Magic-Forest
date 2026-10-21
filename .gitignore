@@ -2,4 +2,7 @@ node_modules/
 dist/
 tools/.cache/
 *.blend1
+# Arquivos de origem do Blender: ficam só no PC, o jogo usa o que está em public/
+*.blend
+texture/
 .claude/settings.local.json
