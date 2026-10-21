@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
-import { makeGlowSprite } from './fx.js';
+import { makeGlowSprite } from '../core/fx.js';
 
 const G = 9.8;
 

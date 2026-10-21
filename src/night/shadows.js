@@ -1,8 +1,6 @@
-import * as THREE from 'three';
 import { CONFIG, DOOR } from './config.js';
-import { PointBuffer } from './fx.js';
+import { ShadowLook } from '../core/shadow-look.js';
 
-const BLOBS = 9;
 const MAX = 24;
 
 // Sombras: nuvens escuras com olhos brilhantes. Fogem da luz, roubam vagalumes e drenam lanternas e a lareira.
@@ -11,13 +9,7 @@ export class Shadows {
     this.fx = fx;
     this.world = world;
     this.lanterns = lanterns;
-    // ordem: aura roxa (aditiva) -> corpo escuro por cima -> olhos
-    this.aura = new PointBuffer(scene, MAX, THREE.AdditiveBlending, 1.5);
-    this.body = new PointBuffer(scene, MAX * BLOBS, THREE.NormalBlending, 1.2);
-    this.glow = new PointBuffer(scene, MAX * 2, THREE.AdditiveBlending, 1.5);
-    this.aura.points.renderOrder = 1;
-    this.body.points.renderOrder = 2;
-    this.glow.points.renderOrder = 4;
+    this.look = new ShadowLook(scene, MAX);
     this.list = [];
   }
 
@@ -300,51 +292,6 @@ export class Shadows {
         });
       }
     }
-    this._draw(time, ctx.camPos);
-  }
-
-  _draw(time, cam) {
-    const b = this.body, g = this.glow, au = this.aura;
-    b.begin();
-    g.begin();
-    au.begin();
-    for (const s of this.list) {
-      let a = s.alpha;
-      let sc = s.scale;
-      if (s.state === 'dying') {
-        const k = s.t / 0.6;
-        a *= 1 - k;
-        sc *= 1 + k * 0.8;
-      }
-      const rise = s.state === 'emerge' ? (1 - s.alpha) * 0.4 : 0;
-      const cy = 0.42 * s.scale + Math.sin(time * 2.1 + s.phase) * 0.06 - rise;
-      const flick = s.burn > 0 ? 0.55 + 0.45 * Math.random() : 1;
-      const f = s.flash;
-      au.push(s.x, cy, s.z, 0.3, 0.05, 0.5, 1.7 * sc, 0.3 * a);
-      for (let k = 0; k < BLOBS; k++) {
-        const ang = s.phase + k * 2.399 + time * (0.7 + (k % 3) * 0.35);
-        const rad = 0.13 * sc * (1 + 0.3 * Math.sin(time * 2.3 + k));
-        const yy = cy + (k / BLOBS - 0.4) * 0.45 * sc + 0.05 * Math.sin(time * 3 + k);
-        const size = (0.36 + 0.12 * Math.sin(time * 2.7 + k * 1.7)) * sc;
-        b.push(s.x + Math.cos(ang) * rad, yy, s.z + Math.sin(ang) * rad,
-          0.03 + f * 0.7, 0.01 + f * 0.4, 0.05 + f * 0.8, size, 0.92 * a * flick);
-      }
-      // olhos so aparecem quando a sombra olha para a camera
-      const toCx = cam.x - s.x, toCz = cam.z - s.z, tl = Math.hypot(toCx, toCz) || 1;
-      const facing = (s.fx * toCx + s.fz * toCz) / tl;
-      const blink = Math.sin(time * 0.9 + s.phase * 3) > 0.97 ? 0.1 : 1;
-      const ea = a * blink * THREE.MathUtils.smoothstep(facing, -0.3, 0.2);
-      if (ea > 0.01) {
-        const lx = -s.fz, lz = s.fx;
-        const ey = cy + 0.1 * sc;
-        for (const side of [-1, 1]) {
-          g.push(s.x + s.fx * 0.22 * sc + lx * 0.07 * side * sc, ey, s.z + s.fz * 0.22 * sc + lz * 0.07 * side * sc,
-            2.4, 0.35, 1.7, 0.085 * sc, ea);
-        }
-      }
-    }
-    b.end();
-    g.end();
-    au.end();
+    this.look.draw(this.list, time, ctx.camPos);
   }
 }

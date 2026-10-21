@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { nodeName } from './assets.js';
+import { nodeName } from '../core/assets.js';
 import { CONFIG, HOUSE } from './config.js';
-import { makeGlowSprite } from './fx.js';
+import { makeGlowSprite } from '../core/fx.js';
 
 // vento nas folhas: deslocamento depois da matriz da instancia (espaco da arvore)
 const LEAF_WIND = /* glsl */ `
@@ -387,6 +387,18 @@ export class World {
       p.x *= R / d;
       p.z *= R / d;
     }
+  }
+
+  // a camera nao entra na casa, nos troncos nem nos postes
+  cameraBlocked(p) {
+    if (p.y < 3.2 && this.insideHouse(p.x, p.z, 0.45)) return true;
+    for (const t of this.trees) {
+      if (p.y < t.h * 0.45 && Math.hypot(p.x - t.x, p.z - t.z) < t.col + 0.15) return true;
+    }
+    for (const c of this.circles) {
+      if (c.r < 0.3 && p.y < 1.5 && Math.hypot(p.x - c.x, p.z - c.z) < c.r + 0.15) return true;
+    }
+    return false;
   }
 
   insideHouse(x, z, pad = 0) {

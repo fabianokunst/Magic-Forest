@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from './config.js';
-import { PointBuffer } from './fx.js';
+import { PointBuffer } from '../core/fx.js';
 
 export class Fireflies {
   constructor(scene, world) {

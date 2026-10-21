@@ -1,7 +1,17 @@
 import * as THREE from 'three';
-import { CONFIG } from './config.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { PointBuffer, glowTexture } from './fx.js';
 
+// Medidas na escala da casinha (fase 1). Em cenarios maiores o ogro e criado com `scale` e tudo acompanha.
+const TUNING = {
+  walk: 1.15,
+  run: 2.3,
+  radius: 0.2,
+  turn: 12,
+  accel: 10,
+  staminaDrain: 0.3,
+  staminaRegen: 0.2,
+};
 // velocidades (m/s) em que as animacoes nao escorregam
 const WALK_NATURAL = 0.9;
 const RUN_NATURAL = 1.5;
@@ -17,12 +27,20 @@ function dampAngle(a, b, k) {
 }
 
 export class Ogre {
-  constructor(gltf, scene) {
+  // shadows: projeta sombra de verdade (floresta) em vez da mancha escura no chao (casinha)
+  constructor(gltf, scene, { scale = 1, shadows = false } = {}) {
+    this.s = scale;
+    this.tuning = { ...TUNING };
     this.root = new THREE.Group();
-    this.model = gltf.scene;
+    this.root.scale.setScalar(scale);
+    this.model = cloneSkinned(gltf.scene);
     this.root.add(this.model);
     scene.add(this.root);
-    this.model.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    this.model.traverse((o) => {
+      if (!o.isMesh) return;
+      o.frustumCulled = false;
+      o.castShadow = shadows;
+    });
 
     this.mixer = new THREE.AnimationMixer(this.model);
     const clips = Object.fromEntries(gltf.animations.map((c) => [c.name, c]));
@@ -53,14 +71,16 @@ export class Ogre {
     this.applePile = this.model.getObjectByName('Macas');
     this.hand = this.model.getObjectByName('Bone008');
 
-    this.bucketLight = new THREE.PointLight(0x7dffa8, 0, 2.4, 2);
+    this.orbColor = [0.55, 2.4, 1.0];
+    this.bucketLight = new THREE.PointLight(0x7dffa8, 0, 2.4 * scale, 2);
     scene.add(this.bucketLight);
     this.orbs = new PointBuffer(scene, 16, THREE.AdditiveBlending, 1.6);
 
     this.blob = new THREE.Mesh(
-      new THREE.CircleGeometry(0.3, 24).rotateX(-Math.PI / 2),
+      new THREE.CircleGeometry(0.3 * scale, 24).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({ map: glowTexture(), color: 0x000000, transparent: true, opacity: 0.6, depthWrite: false }),
     );
+    this.blob.visible = !shadows;
     scene.add(this.blob);
 
     this.pos = new THREE.Vector3();
@@ -80,8 +100,20 @@ export class Ogre {
     this._v = new THREE.Vector3();
   }
 
-  place(x, z, yaw) {
-    this.pos.set(x, 0, z);
+  get walkSpeed() {
+    return this.tuning.walk * this.s;
+  }
+
+  get runSpeed() {
+    return this.tuning.run * this.s;
+  }
+
+  get radius() {
+    return this.tuning.radius * this.s;
+  }
+
+  place(x, z, yaw, y = 0) {
+    this.pos.set(x, y, z);
     this.vel.set(0, 0);
     this.knock.set(0, 0);
     this.yaw = yaw;
@@ -130,12 +162,12 @@ export class Ogre {
   hit(fromX, fromZ) {
     this.playOneShot('Hit', { lock: 0.35, fadeIn: 0.05 });
     const dx = this.pos.x - fromX, dz = this.pos.z - fromZ, d = Math.hypot(dx, dz) || 1;
-    this.knock.set((dx / d) * 3.5, (dz / d) * 3.5);
+    this.knock.set((dx / d) * 3.5 * this.s, (dz / d) * 3.5 * this.s);
     this.invuln = 1.6;
   }
 
   bucketWorld(out) {
-    return this.bucket.getWorldPosition(out).add({ x: 0, y: 0.06, z: 0 });
+    return this.bucket.getWorldPosition(out).add({ x: 0, y: 0.06 * this.s, z: 0 });
   }
 
   handWorld(out) {
@@ -143,6 +175,7 @@ export class Ogre {
   }
 
   update(dt, move, wantRun, world) {
+    const T = this.tuning;
     if (this.lock > 0) this.lock -= dt;
     if (this.invuln > 0) this.invuln -= dt;
     let mx = move.x, mz = move.z;
@@ -151,25 +184,25 @@ export class Ogre {
 
     let running = wantRun && moving && !this.tired;
     if (running) {
-      this.stamina -= CONFIG.ogre.staminaDrain * dt;
+      this.stamina -= T.staminaDrain * dt;
       if (this.stamina <= 0) {
         this.stamina = 0;
         this.tired = true;
         running = false;
       }
     } else {
-      this.stamina = Math.min(1, this.stamina + CONFIG.ogre.staminaRegen * dt);
+      this.stamina = Math.min(1, this.stamina + T.staminaRegen * dt);
       if (this.tired && this.stamina > 0.35) this.tired = false;
     }
 
-    const max = running ? CONFIG.ogre.run : CONFIG.ogre.walk;
-    const k = 1 - Math.exp(-CONFIG.ogre.accel * dt);
+    const max = running ? this.runSpeed : this.walkSpeed;
+    const k = 1 - Math.exp(-T.accel * dt);
     this.vel.x += (mx * max - this.vel.x) * k;
     this.vel.y += (mz * max - this.vel.y) * k;
     this.knock.multiplyScalar(Math.exp(-6 * dt));
     this.pos.x += (this.vel.x + this.knock.x) * dt;
     this.pos.z += (this.vel.y + this.knock.y) * dt;
-    world.collide(this.pos, CONFIG.ogre.radius);
+    world.collide(this.pos, this.radius);
     this.pos.y += (world.heightAt(this.pos.x, this.pos.z) - this.pos.y) * Math.min(1, dt * 14);
     this.speed = this.vel.length();
 
@@ -177,10 +210,10 @@ export class Ogre {
     if (this.faceT > 0) {
       this.faceT -= dt;
       target = Math.atan2(this.faceDir.x, this.faceDir.z);
-    } else if (this.speed > 0.15) {
+    } else if (this.speed > 0.15 * this.s) {
       target = Math.atan2(this.vel.x, this.vel.y);
     }
-    if (target !== null) this.yaw = dampAngle(this.yaw, target, CONFIG.ogre.turn * dt);
+    if (target !== null) this.yaw = dampAngle(this.yaw, target, T.turn * dt);
 
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.yaw;
@@ -188,13 +221,13 @@ export class Ogre {
     this.root.updateMatrixWorld(true);
 
     this.model.visible = this.invuln > 0 ? Math.floor(this.invuln * 12) % 2 === 0 : true;
-    this.blob.position.set(this.pos.x, this.pos.y + 0.012, this.pos.z);
+    this.blob.position.set(this.pos.x, this.pos.y + 0.012 * this.s, this.pos.z);
   }
 
   _updateAnim(dt) {
     const A = this.actions;
-    const s = this.speed;
-    const ws = CONFIG.ogre.walk, rs = CONFIG.ogre.run;
+    const s = this.speed / this.s; // na escala do modelo
+    const ws = this.tuning.walk, rs = this.tuning.run;
     let wI, wW, wR;
     if (s < ws) {
       const k = smooth(s / ws);
@@ -232,16 +265,19 @@ export class Ogre {
     this.mixer.update(dt);
   }
 
+  // coisas brilhando no balde (vagalumes na fase 1, cogumelos na fase 3)
   updateBucket(time, carried, apples) {
     const p = this.bucket.getWorldPosition(this._v);
-    this.bucketLight.position.set(p.x, p.y + 0.45, p.z);
-    this.bucketLight.intensity = carried > 0 ? 0.25 + carried * 0.07 : 0;
+    const s = this.s;
+    const [r, g, b] = this.orbColor;
+    this.bucketLight.position.set(p.x, p.y + 0.45 * s, p.z);
+    this.bucketLight.intensity = carried > 0 ? (0.25 + Math.min(carried, 10) * 0.07) * s * s : 0;
     this.orbs.begin();
-    for (let i = 0; i < carried; i++) {
+    for (let i = 0; i < Math.min(carried, 16); i++) {
       const a = time * (1.2 + (i % 3) * 0.4) + i * 2.4;
-      const r = 0.035 + (i % 4) * 0.012;
-      const y = p.y + 0.1 + 0.03 * Math.sin(time * 2.6 + i * 1.7);
-      this.orbs.push(p.x + Math.cos(a) * r, y, p.z + Math.sin(a) * r, 0.55, 2.4, 1.0, 0.05, 0.9);
+      const rr = (0.035 + (i % 4) * 0.012) * s;
+      const y = p.y + (0.1 + 0.03 * Math.sin(time * 2.6 + i * 1.7)) * s;
+      this.orbs.push(p.x + Math.cos(a) * rr, y, p.z + Math.sin(a) * rr, r, g, b, 0.05 * s, 0.9);
     }
     this.orbs.end();
     this.applePile.visible = apples > 0;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG, LANTERN_SPOTS } from './config.js';
-import { makeGlowSprite } from './fx.js';
+import { makeGlowSprite } from '../core/fx.js';
 
 const Y = new THREE.Vector3(0, 1, 0);
 

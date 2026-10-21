@@ -1,3 +1,17 @@
+// Leitura padrao do teclado e do mouse, relativa a camera. Os testes automaticos trocam por um "bot".
+export function readControls(input, rig) {
+  const a = input.axis();
+  const f = rig.forward();
+  return {
+    mx: -f.z * a.x + f.x * a.y,
+    mz: f.x * a.x + f.z * a.y,
+    run: input.down('ShiftLeft', 'ShiftRight'),
+    roar: input.hit('Space'),
+    act: input.hit('KeyE'),
+    throw: (input.clicked && input.locked) || input.hit('KeyF'),
+  };
+}
+
 export class Input {
   constructor(canvas) {
     this.canvas = canvas;

@@ -2,14 +2,15 @@ import * as THREE from 'three';
 
 const clamp = THREE.MathUtils.clamp;
 
-// Camera em terceira pessoa, levemente por cima do ombro.
+// Camera em terceira pessoa, levemente por cima do ombro. `scale` acompanha o tamanho do ogro no cenario.
 export class CameraRig {
-  constructor(camera) {
+  constructor(camera, scale = 1) {
     this.camera = camera;
+    this.s = scale;
     this.yaw = 0;
     this.pitch = 0.28;
-    this.dist = 2.7;
-    this.curDist = 2.7;
+    this.dist = 2.7 * scale;
+    this.curDist = this.dist;
     this.shake = 0;
     this.target = new THREE.Vector3();
     this._p = new THREE.Vector3();
@@ -20,34 +21,23 @@ export class CameraRig {
   }
 
   _focus(out, focus) {
-    const s = 0.22;
-    return out.set(focus.x + Math.cos(this.yaw) * s, focus.y + 0.55, focus.z - Math.sin(this.yaw) * s);
+    const s = 0.22 * this.s;
+    return out.set(focus.x + Math.cos(this.yaw) * s, focus.y + 0.55 * this.s, focus.z - Math.sin(this.yaw) * s);
   }
 
   snap(focus) {
     this._focus(this.target, focus);
   }
 
-  _blocked(p, world) {
-    if (p.y < 3.2 && world.insideHouse(p.x, p.z, 0.45)) return true;
-    for (const t of world.trees) {
-      if (p.y < t.h * 0.45 && Math.hypot(p.x - t.x, p.z - t.z) < t.col + 0.15) return true;
-    }
-    // postes e demais obstaculos finos
-    for (const c of world.circles) {
-      if (c.r < 0.3 && p.y < 1.5 && Math.hypot(p.x - c.x, p.z - c.z) < c.r + 0.15) return true;
-    }
-    return false;
-  }
-
   update(dt, input, focus, world, orbit) {
+    const S = this.s;
     if (orbit) {
       this.yaw += dt * 0.12;
       this.pitch += (0.32 - this.pitch) * dt;
     } else {
       this.yaw -= input.mouseDX * 0.0026;
       this.pitch = clamp(this.pitch + input.mouseDY * 0.0022, -0.2, 1.1);
-      this.dist = clamp(this.dist + input.wheel * 0.3, 1.5, 5);
+      this.dist = clamp(this.dist + input.wheel * 0.3 * S, 1.5 * S, 5 * S);
     }
     this.target.lerp(this._focus(this._p, focus), 1 - Math.exp(-dt * 10));
 
@@ -59,16 +49,16 @@ export class CameraRig {
       this.target.z + Math.cos(this.yaw) * cp * d,
     );
     let allowed = this.dist;
-    for (; allowed > 0.6; allowed -= 0.1) {
-      if (!this._blocked(place(allowed), world)) break;
+    for (; allowed > 0.6 * S; allowed -= 0.1 * S) {
+      if (!world.cameraBlocked(place(allowed))) break;
     }
     this.curDist = allowed < this.curDist ? allowed : this.curDist + (allowed - this.curDist) * Math.min(1, dt * 4);
     place(this.curDist);
-    pos.y = Math.max(pos.y, world.heightAt(pos.x, pos.z) + 0.12);
+    pos.y = Math.max(pos.y, world.heightAt(pos.x, pos.z) + 0.12 * S);
 
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 1.6);
-      const s = this.shake * this.shake * 0.12;
+      const s = this.shake * this.shake * 0.12 * S;
       pos.x += (Math.random() - 0.5) * s;
       pos.y += (Math.random() - 0.5) * s;
       pos.z += (Math.random() - 0.5) * s;
