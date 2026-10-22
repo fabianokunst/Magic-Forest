@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 
 const clamp = THREE.MathUtils.clamp;
+// angulos alternativos quando nao ha espaco atras do ogro: [quanto sobe, quanto gira para o lado]
+const CAMERA_OPTIONS = [[0.35, 0], [0, 0.6], [0, -0.6], [0.7, 0], [0.35, 1.2], [0.35, -1.2], [0.35, 1.6], [0.35, -1.6]];
 
 // Camera em terceira pessoa, levemente por cima do ombro. `scale` acompanha o tamanho do ogro no cenario.
 export class CameraRig {
@@ -11,6 +13,8 @@ export class CameraRig {
     this.pitch = 0.28;
     this.dist = 2.7 * scale;
     this.curDist = this.dist;
+    this.offPitch = 0; // desvio temporario para achar espaco atras do ogro
+    this.offYaw = 0;
     this.shake = 0;
     this.target = new THREE.Vector3();
     this._p = new THREE.Vector3();
@@ -27,6 +31,7 @@ export class CameraRig {
 
   snap(focus) {
     this._focus(this.target, focus);
+    this.offPitch = this.offYaw = 0;
   }
 
   update(dt, input, focus, world, orbit) {
@@ -41,21 +46,41 @@ export class CameraRig {
     }
     this.target.lerp(this._focus(this._p, focus), 1 - Math.exp(-dt * 10));
 
-    const cp = Math.cos(this.pitch), sp = Math.sin(this.pitch);
     const pos = this.camera.position;
-    const place = (d) => pos.set(
-      this.target.x + Math.sin(this.yaw) * cp * d,
-      this.target.y + sp * d,
-      this.target.z + Math.cos(this.yaw) * cp * d,
-    );
+    const place = (d, pitch, yaw) => {
+      const cp = Math.cos(pitch);
+      return pos.set(
+        this.target.x + Math.sin(yaw) * cp * d,
+        this.target.y + Math.sin(pitch) * d,
+        this.target.z + Math.cos(yaw) * cp * d,
+      );
+    };
     // anda do ogro ate a camera: o primeiro obstaculo no caminho limita a distancia (nada fica na frente)
-    let allowed = 0.6 * S;
-    for (let d = allowed; d <= this.dist + 1e-6; d += 0.1 * S) {
-      if (world.cameraBlocked(place(d))) break;
-      allowed = d;
+    const reach = (pitch, yaw) => {
+      let allowed = 0;
+      for (let d = 0.6 * S; d <= this.dist + 1e-6; d += 0.1 * S) {
+        if (world.cameraBlocked(place(d, pitch, yaw))) break;
+        allowed = d;
+      }
+      return allowed;
+    };
+    // sem espaco atras do ogro (de costas para uma parede ou tronco): procura um angulo melhor,
+    // mais alto ou um pouco de lado, preferindo o que muda menos a visao
+    let best = { dp: 0, dy: 0, a: reach(this.pitch, this.yaw) };
+    if (best.a < this.dist * 0.7) {
+      best.score = best.a;
+      for (const [dp, dy] of CAMERA_OPTIONS) {
+        const a = reach(Math.min(1.4, this.pitch + dp), this.yaw + dy);
+        const score = a - (Math.abs(dy) * 0.25 + dp * 0.3) * S;
+        if (score > best.score) best = { dp, dy, a, score };
+      }
     }
+    const k = Math.min(1, dt * 5);
+    this.offPitch += (best.dp - this.offPitch) * k;
+    this.offYaw += (best.dy - this.offYaw) * k;
+    const allowed = Math.max(best.a, 0.6 * S);
     this.curDist = allowed < this.curDist ? allowed : this.curDist + (allowed - this.curDist) * Math.min(1, dt * 4);
-    place(this.curDist);
+    place(this.curDist, Math.min(1.4, this.pitch + this.offPitch), this.yaw + this.offYaw);
     pos.y = Math.max(pos.y, world.heightAt(pos.x, pos.z) + 0.12 * S);
 
     if (this.shake > 0) {

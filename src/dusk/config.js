@@ -20,7 +20,7 @@ export const DUSK = {
     max: [2, 6],              // quantas ao mesmo tempo, do comeco ao fim da fase
     every: 8,                 // aparece mais uma a cada tantos segundos (ate o maximo)
     near: [12, 22],           // nasce a esta distancia do ogro, fora da tela
-    speed: [4.2, 5.8],        // de costas para o ogro (ele anda a 2,9 e corre a 5,75)
+    speed: [4.6, 6.2],        // de costas para o ogro (ele anda a 2,9 e corre a 5,75)
     see: 26,                  // distancia maxima em que o olhar do ogro congela a sombra
     cone: 0.6,                // abertura do olhar (cosseno do meio-angulo: 0.6 = 53 graus para cada lado)
     touch: 1.3,

@@ -391,7 +391,10 @@ export class World {
 
   // a camera nao entra na casa, nos troncos nem nos postes
   cameraBlocked(p) {
-    if (p.y < 3.2 && this.insideHouse(p.x, p.z, 0.45)) return true;
+    // casa: paredes ate o alto e telhado de quatro aguas (beiral de 1,2 m a 1,1 m de altura, cume a 2,9 m)
+    const m = Math.max(Math.abs(p.x), Math.abs(p.z));
+    if (p.y < 3.1 && m < HOUSE.half + 0.15) return true;
+    if (p.y > 0.95 && p.y < 3.1 && m < 1.2 - ((p.y - 1.1) / 1.8) + 0.2) return true;
     for (const t of this.trees) {
       if (p.y < t.h * 0.45 && Math.hypot(p.x - t.x, p.z - t.z) < t.col + 0.15) return true;
     }

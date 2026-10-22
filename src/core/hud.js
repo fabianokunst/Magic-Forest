@@ -16,13 +16,11 @@ export class Hud {
       clockTo: $('clock-to'),
       clock: $('clock'),
       clockFill: $('clock-fill'),
-      slots: $('slots'),
       apples: $('apples'),
       fireflies: $('fireflies'),
       slotApples: $('slot-apples'),
       slotFire: $('slot-fireflies'),
-      stamina: $('stamina-fill'),
-      staminaBox: document.querySelector('.stamina'),
+      inventory: document.querySelector('.inventory'),
       roar: $('roar'),
       roarRing: $('roar-ring'),
       roarText: $('roar-text'),
@@ -64,7 +62,7 @@ export class Hud {
     e.clockPanel.className = `panel clock ${clock.theme}`;
     e.clockFrom.innerHTML = clock.from;
     e.clockTo.innerHTML = clock.to;
-    e.slots.classList.toggle('hidden', !slots);
+    e.inventory.classList.toggle('hidden', !slots);
     e.crosshair.classList.toggle('hidden', !crosshair);
     e.roar.classList.toggle('hidden', !roar);
     if (roar) e.roarText.textContent = roar;
@@ -102,11 +100,6 @@ export class Hud {
     this._set('fire', e.fireflies, fireflies, e.slotFire);
     e.slotApples.classList.toggle('empty', apples === 0);
     e.slotFire.classList.toggle('full', fireflies >= capacity);
-  }
-
-  setStamina(stamina, tired) {
-    this.el.stamina.style.width = `${stamina * 100}%`;
-    this.el.staminaBox.classList.toggle('tired', tired);
   }
 
   setRoar(cooldown, max) {

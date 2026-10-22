@@ -15,8 +15,8 @@ export const MORNING = {
   shadow: {
     unit: 2.3,                // tamanho em relacao as sombras da casinha
     fear: 9,                  // distancia em que fogem do ogro andando
-    fearRun: 13,              // ... e correndo (o barulho assusta de mais longe)
-    speed: 4.1,               // o ogro anda a 2,9 e corre a 5,75
+    fearRun: 15,              // ... e correndo (o barulho assusta de mais longe)
+    speed: 4.6,               // o ogro anda a 2,9 e corre a 5,75
     sunSlow: 0.9,             // no sol ficam um pouco mais lentas
     sunTime: 2.1,             // segundos no sol ate virar borboleta
     recover: 0.35,            // quanto recuperam por segundo de volta na sombra

@@ -9,8 +9,6 @@ const TUNING = {
   radius: 0.2,
   turn: 12,
   accel: 10,
-  staminaDrain: 0.3,
-  staminaRegen: 0.2,
 };
 // velocidades (m/s) em que as animacoes nao escorregam
 const WALK_NATURAL = 0.9;
@@ -90,8 +88,6 @@ export class Ogre {
     this.speed = 0;
     this.lock = 0;
     this.invuln = 0;
-    this.stamina = 1;
-    this.tired = false;
     this.oneShot = null;
     this.mode = 'play';
     this.modeW = 0;
@@ -118,8 +114,6 @@ export class Ogre {
     this.knock.set(0, 0);
     this.yaw = yaw;
     this.lock = this.invuln = this.faceT = 0;
-    this.stamina = 1;
-    this.tired = false;
     if (this.oneShot) this.oneShot.action.stop();
     this.oneShot = null;
     this.root.position.copy(this.pos);
@@ -182,20 +176,8 @@ export class Ogre {
     if (this.lock > 0 || this.mode !== 'play') mx = mz = 0;
     const moving = mx !== 0 || mz !== 0;
 
-    let running = wantRun && moving && !this.tired;
-    if (running) {
-      this.stamina -= T.staminaDrain * dt;
-      if (this.stamina <= 0) {
-        this.stamina = 0;
-        this.tired = true;
-        running = false;
-      }
-    } else {
-      this.stamina = Math.min(1, this.stamina + T.staminaRegen * dt);
-      if (this.tired && this.stamina > 0.35) this.tired = false;
-    }
-
-    const max = running ? this.runSpeed : this.walkSpeed;
+    // corre enquanto o Shift estiver apertado, sem cansar
+    const max = wantRun && moving ? this.runSpeed : this.walkSpeed;
     const k = 1 - Math.exp(-T.accel * dt);
     this.vel.x += (mx * max - this.vel.x) * k;
     this.vel.y += (mz * max - this.vel.y) * k;

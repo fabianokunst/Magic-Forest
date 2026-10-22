@@ -167,7 +167,6 @@ export class MorningPhase extends Phase {
     const p = Math.min(1, this.time / M.seconds);
     hud.setGoal(this.count / this.total, `${this.count}/${this.total}`);
     hud.setClock(clockText(7 * 60 + p * 300), p);
-    hud.setStamina(this.ogre.stamina, this.ogre.tired);
     hud.setRoar(this.roarCd, M.roar.cooldown);
     const m = this.map;
     m.yaw = this.rig.yaw;

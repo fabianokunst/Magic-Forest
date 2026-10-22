@@ -195,7 +195,6 @@ export class NightPhase extends Phase {
     hud.setGoal(h, `${Math.round(h * 100)}%`, h < 0.25);
     hud.setClock(clockText(20 * 60 + this.progress * 600), this.progress);
     hud.setSlots(this.appleCount, this.carried, CONFIG.bucketCapacity);
-    hud.setStamina(this.ogre.stamina, this.ogre.tired);
     hud.setRoar(this.roarCd, CONFIG.roar.cooldown);
     const m = this.map;
     m.yaw = this.rig.yaw;

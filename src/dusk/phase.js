@@ -214,7 +214,6 @@ export class DuskPhase extends Phase {
     const hud = this.hud;
     hud.setGoal(this.carried / this.total, `${this.carried}/${this.total}`);
     hud.setClock(clockText(17.5 * 60 + this.progress * 90), this.progress);
-    hud.setStamina(this.ogre.stamina, this.ogre.tired);
     hud.setRoar(this.roarCd, D.roar.cooldown);
     const m = this.map;
     m.yaw = this.rig.yaw;
