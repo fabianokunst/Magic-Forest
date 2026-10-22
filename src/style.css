@@ -11,6 +11,7 @@
   --butterfly: #ffb3e0;
   --mush: #ff8fb0;
   --sun: #ffd45a;
+  --moon: #9fe8ff;
 }
 
 * { box-sizing: border-box; }
@@ -60,6 +61,8 @@ html, body {
 .goal.sun .label b { color: var(--butterfly); }
 .goal.mush .fill { background: linear-gradient(90deg, #ff6b8a, #7ff0ff); box-shadow: 0 0 12px rgba(255, 120, 170, .6); }
 .goal.mush .label b { color: var(--mush); }
+.goal.moon .fill { background: linear-gradient(90deg, #6fa8ff, #9fe8ff, #e4fbff); box-shadow: 0 0 12px rgba(120, 220, 255, .6); }
+.goal.moon .label b { color: var(--moon); }
 .goal.danger .bar .fill { background: linear-gradient(90deg, #ff2a2a, #ff7a3c); animation: pulse .6s infinite alternate; }
 .goal.danger { border-color: rgba(255, 80, 60, .5); }
 @keyframes pulse { from { opacity: .55; } to { opacity: 1; } }
@@ -71,6 +74,7 @@ html, body {
 #clock-fill { height: 100%; width: 0; background: linear-gradient(90deg, #4b5bd8, #b06bd8, #ffb35a); }
 .clock.morning #clock-fill { background: linear-gradient(90deg, #ffb35a, #ffe27a, #8fd8ff); }
 .clock.dusk #clock-fill { background: linear-gradient(90deg, #ffd45a, #ff7a4a, #6a4bd8); }
+.clock.moon #clock-fill { background: linear-gradient(90deg, #6a4bd8, #4b7bd8, #9fe8ff); }
 
 #minimap {
   position: absolute; top: 16px; right: 16px;
@@ -86,6 +90,7 @@ html, body {
 .slot small { font-size: 15px; color: var(--muted); margin-left: -4px; }
 .slot.bump { animation: bump .35s; }
 .slot.full b { color: var(--fire); }
+.slot.moon.full b { color: var(--moon); }
 .slot.empty b { color: var(--apple); }
 @keyframes bump { 40% { transform: scale(1.25); } }
 
@@ -170,7 +175,7 @@ h2 { margin: 0; font-size: 34px; }
 .kicker { margin: 0 0 6px; display: inline-flex; align-items: center; gap: 8px; color: var(--lamp); font-size: 15px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; }
 .story { font-size: 17px; line-height: 1.55; margin: 16px auto 0; max-width: 660px; color: #d7dcf5; }
 .c-shadow { color: var(--shadow); } .c-fire { color: var(--fire); } .c-hearth { color: var(--hearth); }
-.c-butterfly { color: var(--butterfly); } .c-mush { color: var(--mush); }
+.c-butterfly { color: var(--butterfly); } .c-mush { color: var(--mush); } .c-moon { color: var(--moon); }
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; text-align: left; }
 .controls, .tips { list-style: none; margin: 0; padding: 14px 16px; background: rgba(255, 255, 255, .04); border-radius: 14px; font-size: 15px; }
 .controls li, .tips li { margin: 7px 0; line-height: 1.4; }
@@ -183,6 +188,7 @@ h2 { margin: 0; font-size: 34px; }
 .dot.shadow { background: #2a1840; box-shadow: 0 0 8px var(--shadow); }
 .dot.sun { background: var(--sun); box-shadow: 0 0 8px var(--sun); }
 .dot.mush { background: var(--mush); box-shadow: 0 0 8px var(--mush); }
+.dot.moon { background: var(--moon); box-shadow: 0 0 8px var(--moon); }
 
 .buttons { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
 .buttons .btn { margin-top: 0; }
@@ -208,10 +214,10 @@ h2 { margin: 0; font-size: 34px; }
 .stats dd { margin: 0; font-weight: 600; text-align: right; }
 
 /* ---------- menu de fases ---------- */
-.menu { width: 100%; max-width: 980px; text-align: center; margin: auto; }
+.menu { width: 100%; max-width: 1140px; text-align: center; margin: auto; }
 .menu .title { font-size: 64px; }
 .menu .sub { font-size: 20px; color: #d7dcf5; text-shadow: 0 2px 12px rgba(0, 0, 0, .6); }
-.phase-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 28px; }
+.phase-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 28px; }
 .phase-card {
   position: relative; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; text-align: left;
   padding: 18px 18px 16px; border-radius: 20px; cursor: pointer; font-family: inherit; color: var(--text);
@@ -224,6 +230,7 @@ h2 { margin: 0; font-size: 34px; }
 .phase-card.t-night::before { background: radial-gradient(circle at 85% 0%, rgba(90, 110, 255, .55), transparent 60%), linear-gradient(160deg, #1a1f4a, #0a0c1c); }
 .phase-card.t-morning::before { background: radial-gradient(circle at 85% 0%, rgba(255, 215, 100, .7), transparent 60%), linear-gradient(160deg, #3d8a7a, #1d3b4a); }
 .phase-card.t-dusk::before { background: radial-gradient(circle at 85% 0%, rgba(255, 130, 80, .75), transparent 60%), linear-gradient(160deg, #6a3550, #241a3a); }
+.phase-card.t-moon::before { background: radial-gradient(circle at 85% 0%, rgba(200, 235, 255, .6), transparent 60%), linear-gradient(160deg, #1f4466, #0b1226); }
 .phase-card:not(.locked):hover { transform: translateY(-4px); border-color: rgba(255, 220, 150, .6); box-shadow: 0 18px 50px rgba(0, 0, 0, .45); }
 .phase-card.locked { cursor: default; filter: grayscale(.7); opacity: .65; }
 .pc-top { display: flex; width: 100%; justify-content: space-between; align-items: center; }
@@ -235,6 +242,10 @@ h2 { margin: 0; font-size: 34px; }
 .pc-stars .off { opacity: .22; }
 .pc-lock { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
 .menu-foot { margin-top: 18px; color: #ffd45a; font-size: 18px; min-height: 22px; text-shadow: 0 2px 12px rgba(0, 0, 0, .6); }
+
+@media (max-width: 1060px) {
+  .phase-cards { grid-template-columns: repeat(2, 1fr); }
+}
 
 @media (max-width: 760px) {
   .cols, .phase-cards { grid-template-columns: 1fr; }

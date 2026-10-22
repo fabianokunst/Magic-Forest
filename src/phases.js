@@ -1,6 +1,8 @@
 import { NightPhase } from './night/phase.js';
 import { MorningPhase } from './morning/phase.js';
 import { DuskPhase } from './dusk/phase.js';
+import { MoonPhase } from './moon/phase.js';
+import { MOON } from './moon/config.js';
 import { ICONS } from './core/icons.js';
 
 const k = (...keys) => keys.map((x) => `<kbd>${x}</kbd>`).join('');
@@ -78,6 +80,31 @@ export const PHASES = [
       ['shadow', 'Gire a câmera de vez em quando: elas chegam por trás.'],
       ['hearth', 'Se uma sombra encostar no ogro, ele derruba cogumelos.'],
       ['lamp', 'No minimapa, o leque claro mostra para onde você olha.'],
+    ],
+  },
+  {
+    id: 4,
+    make: (app) => new MoonPhase(app),
+    forest: true,
+    when: 'Lua cheia',
+    theme: 'moon',
+    icon: ICONS.fullMoon,
+    title: 'A Trilha das Flores-Lua',
+    short: 'Leve as flores-lua para a cabana sem deixar as sombras roubarem.',
+    story: `Lua cheia! As <b class="c-moon">flores-lua</b> abriram e fizeram uma trilha brilhante da
+      <b>cabana</b> até a Clareira da Lua. O vizinho da cabana viajou e pediu ao ogro para cuidar da casa,
+      mas casa vazia e escura é tudo o que as <b class="c-shadow">Sombras</b> querem! Plante as flores no
+      jardim da cabana. As sombras não entram na luz das flores, mas <b>roubam as flores do balde</b>.`,
+    controls: [
+      `${k('W', 'A', 'S', 'D')} andar &nbsp; ${k('Shift')} correr`,
+      `${k('Mouse')} câmera`,
+      `${k('Espaço')} <b>RUGIDO</b>: a sombra larga a flor e foge`,
+    ],
+    tips: [
+      ['moon', `Chegue perto das flores para colher. No balde cabem ${MOON.bucket}.`],
+      ['hearth', 'Entre no jardim da cabana para plantar as flores.'],
+      ['shadow', 'Roubaram? Corra atrás da sombra para pegar a flor de volta!'],
+      ['lamp', 'A luz das flores protege: colha primeiro as do fim da trilha.'],
     ],
   },
 ];

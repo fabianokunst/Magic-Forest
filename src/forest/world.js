@@ -154,7 +154,9 @@ export class ForestWorld {
       }
     });
     const b = this.bound;
-    if (b) {
+    if (b?.clamp) {
+      b.clamp(p); // area com outro formato (a faixa em volta da trilha, na fase 4)
+    } else if (b) {
       const dx = p.x - b.x, dz = p.z - b.z, d = Math.hypot(dx, dz);
       if (d > b.r) {
         p.x = b.x + (dx / d) * b.r;

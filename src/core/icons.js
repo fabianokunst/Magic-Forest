@@ -4,6 +4,11 @@ const svg = (body, cls = 'icon') => `<svg class="${cls}" viewBox="0 0 24 24">${b
 export const ICONS = {
   fire: svg('<path d="M12 2c1 4 5 5.5 5 10.5A5 5 0 0 1 7 12.5C7 10 8.5 8.6 9.5 7.5c.2 2 1 3 2 3.2C11 8 11.5 5 12 2z" fill="#ff9a3c"/><path d="M12 13c.6 1.8 2.2 2.4 2.2 4.4a2.2 2.2 0 0 1-4.4 0c0-1.2.9-1.8 1.4-2.4.1.8.4 1.2.8 1.3-.2-1.2 0-2.3 0-3.3z" fill="#ffe08a"/>'),
   moon: svg('<path d="M15 3a9 9 0 1 0 6 15.5A8 8 0 0 1 15 3z" fill="#cfd8ff"/>', 'icon small'),
+  fullMoon: svg('<circle cx="12" cy="12" r="9" fill="#e8ecff"/><circle cx="9" cy="10" r="2" fill="#c3cbef"/><circle cx="15" cy="15" r="1.5" fill="#c3cbef"/><circle cx="15.5" cy="8.5" r="1" fill="#c3cbef"/>', 'icon small'),
+  stars: svg('<path d="M8 3l1.4 3.6L13 8l-3.6 1.4L8 13 6.6 9.4 3 8l3.6-1.4z" fill="#fff3c4"/><path d="M17 11l1 2.6 2.6 1-2.6 1-1 2.6-1-2.6-2.6-1 2.6-1z" fill="#cfd8ff"/>', 'icon small'),
+  flower: svg('<path d="M12 14v8" stroke="#4f9a5a" stroke-width="1.8" stroke-linecap="round"/><path d="M12 19c-1.8-2.4-4.4-2.6-5.6-1.8 1.2 1.8 3.4 2.6 5.6 1.8z" fill="#4f9a5a"/><g transform="translate(12 9.5)" fill="#9fe8ff">' +
+    [0, 60, 120, 180, 240, 300].map((a) => `<ellipse cy="-4" rx="2.4" ry="3.4" transform="rotate(${a})"/>`).join('') +
+    '<circle r="2.3" fill="#fff2a0"/></g>'),
   sun: svg('<circle cx="12" cy="12" r="5" fill="#ffc46b"/><g stroke="#ffc46b" stroke-width="2" stroke-linecap="round"><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></g>', 'icon small'),
   sunrise: svg('<path d="M5 17a7 7 0 0 1 14 0z" fill="#ffb35a"/><g stroke="#ffb35a" stroke-width="2" stroke-linecap="round"><path d="M12 4v3M4.2 8.2l2 2M19.8 8.2l-2 2M2 20h20"/></g>', 'icon small'),
   sunset: svg('<path d="M5 17a7 7 0 0 1 14 0z" fill="#ff7a4a"/><g stroke="#ff7a4a" stroke-width="2" stroke-linecap="round"><path d="M2 20h20M12 4v4M9.5 6.5 12 9l2.5-2.5"/></g>', 'icon small'),

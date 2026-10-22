@@ -236,6 +236,27 @@ export class Sfx {
     this._tone('triangle', f * 0.5, f * 0.75, 0.08, 0.06);
   }
 
+  // flor-lua colhida: um sininho que sobe a cada flor no balde
+  flower(n = 0) {
+    const f = 880 * Math.pow(1.08, Math.min(n, 10));
+    this._tone('sine', f, f * 1.01, 0.6, 0.08);
+    this._tone('sine', f * 1.5, f * 1.5, 0.45, 0.04, 0.05);
+    this._noise(0.25, 0.025, 'highpass', 6000, 9000, 0.7);
+  }
+
+  // flor plantada no jardim
+  plant(n = 0) {
+    const f = 523 * Math.pow(1.03, n % 12);
+    this._tone('triangle', f, f * 1.5, 0.12, 0.07);
+    this._tone('sine', f * 2, f * 2, 0.5, 0.05, 0.08);
+  }
+
+  // pegou a flor de volta da sombra
+  recover() {
+    [660, 880, 1320].forEach((f, i) => this._tone('sine', f, f * 1.02, 0.25, 0.08, i * 0.05));
+    this._noise(0.4, 0.06, 'bandpass', 1800, 300, 2);
+  }
+
   chime() {
     [523, 784, 1046].forEach((f, i) => this._tone('sine', f, f, 0.8, 0.07, i * 0.12));
   }

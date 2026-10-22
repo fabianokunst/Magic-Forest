@@ -20,6 +20,10 @@ export class Hud {
       fireflies: $('fireflies'),
       slotApples: $('slot-apples'),
       slotFire: $('slot-fireflies'),
+      slotCarry: $('slot-carry'),
+      carry: $('carry'),
+      carryIcon: $('carry-icon'),
+      carryMax: $('carry-max'),
       inventory: document.querySelector('.inventory'),
       roar: $('roar'),
       roarRing: $('roar-ring'),
@@ -53,8 +57,8 @@ export class Hud {
     this.el.hud.classList.toggle('hidden', !v);
   }
 
-  // cada fase escolhe o que aparece
-  configure({ goal, clock, slots = false, crosshair = false, roar = 'Rugido', vignette = 'shadow' }) {
+  // cada fase escolhe o que aparece. slots: macas e vagalumes (fase 1); carry: { icon, max } o que vai no balde
+  configure({ goal, clock, slots = false, carry = null, crosshair = false, roar = 'Rugido', vignette = 'shadow' }) {
     const e = this.el;
     e.goal.className = `panel goal ${goal.theme}`;
     e.goalIcon.innerHTML = goal.icon;
@@ -62,7 +66,15 @@ export class Hud {
     e.clockPanel.className = `panel clock ${clock.theme}`;
     e.clockFrom.innerHTML = clock.from;
     e.clockTo.innerHTML = clock.to;
-    e.inventory.classList.toggle('hidden', !slots);
+    e.inventory.classList.toggle('hidden', !slots && !carry);
+    e.slotApples.classList.toggle('hidden', !slots);
+    e.slotFire.classList.toggle('hidden', !slots);
+    e.slotCarry.classList.toggle('hidden', !carry);
+    if (carry) {
+      e.carryIcon.innerHTML = carry.icon;
+      e.carryMax.textContent = `/${carry.max}`;
+      this.carryCapacity = carry.max;
+    }
     e.crosshair.classList.toggle('hidden', !crosshair);
     e.roar.classList.toggle('hidden', !roar);
     if (roar) e.roarText.textContent = roar;
@@ -100,6 +112,12 @@ export class Hud {
     this._set('fire', e.fireflies, fireflies, e.slotFire);
     e.slotApples.classList.toggle('empty', apples === 0);
     e.slotFire.classList.toggle('full', fireflies >= capacity);
+  }
+
+  setCarry(n) {
+    const e = this.el;
+    this._set('carry', e.carry, n, e.slotCarry);
+    e.slotCarry.classList.toggle('full', n >= this.carryCapacity);
   }
 
   setRoar(cooldown, max) {
