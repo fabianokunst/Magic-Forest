@@ -11,7 +11,7 @@ import { pointUniforms } from './core/fx.js';
 import { ICONS } from './core/icons.js';
 import { loadProgress, saveProgress } from './core/save.js';
 import { ForestWorld } from './forest/world.js';
-import { PHASES } from './phases.js';
+import { PHASES, ALL_PHASES_OPEN } from './phases.js';
 
 // Na URL: ?fase=2 abre direto a fase 2 (e libera as anteriores).
 const params = new URLSearchParams(location.search);
@@ -85,7 +85,7 @@ function resize() {
 addEventListener('resize', resize);
 resize();
 
-const unlocked = (id) => id === 1 || (app.progress.stars[id - 1] ?? 0) > 0;
+const unlocked = (id) => ALL_PHASES_OPEN || id === 1 || (app.progress.stars[id - 1] ?? 0) > 0;
 
 // ------------------------------------------------------------- troca de fase
 

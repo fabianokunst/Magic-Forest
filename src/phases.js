@@ -5,6 +5,9 @@ import { MoonPhase } from './moon/phase.js';
 import { MOON } from './moon/config.js';
 import { ICONS } from './core/icons.js';
 
+// CHAVE: true = todas as fases abertas no menu. false = cada fase só abre depois de vencer a anterior.
+export const ALL_PHASES_OPEN = true;
+
 const k = (...keys) => keys.map((x) => `<kbd>${x}</kbd>`).join('');
 
 // As fases do jogo, na ordem. Os textos aparecem no menu e na tela de cada fase.
